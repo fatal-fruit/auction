@@ -89,12 +89,49 @@ Indexes
 
 ## Messages
 
+```protobuf
+service Msg {
+  rpc CreateAuction(MsgCreateAuctionMessage) returns (MsgCreateAuctionResponse);
+}
+```
+
 ### CreateAuction
 ```protobuf
 
 message MsgCreateAuctionMessage {
   option (cosmos.msg.v1.signer) = "auctioneer";
+
+  // proposer is the account address of the auctioneer.
+  string auctioneer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  string name = 2;
   
+  google.protobuf.Duration duration = 3 [
+    (gogoproto.nullable)    = false,
+    (gogoproto.stdduration) = true,
+    (gogoproto.jsontag)     = "duration,omitempty"
+  ];
+
+  google.protobuf.Duration duration_extension = 4 [
+    (gogoproto.nullable)    = false,
+    (gogoproto.stdduration) = true,
+    (gogoproto.jsontag)     = "duration_extension,omitempty"
+  ];
+
+  repeated cosmos.base.v1beta1.Coin reserve_price = 5 [
+    (gogoproto.nullable)     = false,
+    (amino.dont_omitempty)   = true,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  repeated cosmos.base.v1beta1.Coin deposit = 6 [
+    (gogoproto.nullable)     = false,
+    (amino.dont_omitempty)   = true,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+}
+
+message MsgCreateAuctionResponse {
   
 }
 
