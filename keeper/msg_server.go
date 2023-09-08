@@ -30,7 +30,3 @@ func (srv msgServer) MsgDeleteAuctionMessage(ctx context.Context, msg *typesMsgC
 func (srv msgServer) MsgExecuteAuctionMessage(ctx context.Context, msg *typesMsgCreate) (*types.MsgTripCircuitBreakerResponse, error) {
 
 }
-
-func (srv msgServer) MsgExecuteAuctionMessage(ctx context.Context, msg *typesMsgCreate) (*types.MsgTripCircuitBreakerResponse, error) {
-
-}
