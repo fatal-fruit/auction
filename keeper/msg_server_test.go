@@ -4,5 +4,5 @@ import (
 	"testing"
 )
 
-func TestMsgReserve(t *testing.T) {
+func TestMsg(t *testing.T) {
 }

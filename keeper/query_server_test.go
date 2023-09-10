@@ -4,6 +4,6 @@ import (
 	"testing"
 )
 
-func TestQueryParams(t *testing.T) {
+func TestQuery(t *testing.T) {
 
 }

@@ -9,5 +9,11 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/query/v1/query.proto";
 
 service Query {
-
+  rpc Counter(QueryCounterRequest) returns (QueryCounterResponse) {
+    option (google.api.http).get = "/cosmos/auction/counter";
+  }
 }
+
+message QueryCounterResponse { }
+
+message QueryCounterRequest {  }

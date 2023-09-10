@@ -2,13 +2,15 @@ package keeper
 
 import (
 	"context"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	auctiontypes "github.com/fatal-fruit/auction/types"
 )
 
-func (k *Keeper) ExportGenesis(ctx context.Context) (data *types.GenesisState) {
-	return &types.GenesisState{}
+func (k *Keeper) InitGenesis(ctx context.Context, data *auctiontypes.GenesisState) error {
+	// TODO: Implement
+	return nil
 }
 
-func (k *Keeper) InitGenesis(ctx context.Context, genState *types.GenesisState) {
-
+func (k *Keeper) ExportGenesis(ctx context.Context) (*auctiontypes.GenesisState, error) {
+	// TODO: Implement
+	return &auctiontypes.GenesisState{}, nil
 }

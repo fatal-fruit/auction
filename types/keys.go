@@ -12,8 +12,3 @@ const (
 	// RouterKey defines the module's message routing key
 	RouterKey = ModuleName
 )
-
-//var (
-//	NamesKey  = collections.NewPrefix(0)
-//	OwnersKey = collections.NewPrefix(1)
-//)

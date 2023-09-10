@@ -1,25 +1,13 @@
 package keeper
 
+import "github.com/fatal-fruit/auction/types"
+
 type msgServer struct {
+	k Keeper
 }
 
-//var _ types.MsgServer = msgServer{}
-//
-//func NewMsgServerImpl(keeper Keeper) types.MsgServer {
-//	return &msgServer{Keeper: keeper}
-//}
+var _ types.MsgServer = msgServer{}
 
-//func (srv msgServer) MsgCreateAuctionMessage(ctx context.Context, msg *typesMsgCreate) (*types.MsgTripCircuitBreakerResponse, error) {
-//
-//}
-//
-//func (srv msgServer) MsgUpdateAuctionMessage(ctx context.Context, msg *typesMsgCreate) (*types.MsgTripCircuitBreakerResponse, error) {
-//
-//}
-//
-//func (srv msgServer) MsgDeleteAuctionMessage(ctx context.Context, msg *typesMsgCreate) (*types.MsgTripCircuitBreakerResponse, error) {
-//
-//}
-//func (srv msgServer) MsgExecuteAuctionMessage(ctx context.Context, msg *typesMsgCreate) (*types.MsgTripCircuitBreakerResponse, error) {
-//
-//}
+func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+	return &msgServer{k: keeper}
+}

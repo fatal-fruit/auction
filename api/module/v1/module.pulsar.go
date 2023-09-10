@@ -510,8 +510,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Module is the app config object of the module.
-// Learn more: https://docs.cosmos.network/main/building-modules/depinject
 type Module struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
