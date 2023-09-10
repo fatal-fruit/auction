@@ -12,12 +12,10 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			Service: auctionv1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
-					RpcMethod: "Name",
-					Use:       "whois [name]",
-					Short:     "Get the resolve address and owner for a name record",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "name"},
-					},
+					RpcMethod:      "Counter",
+					Use:            "counter",
+					Short:          "Counter",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
 			},
 		},
