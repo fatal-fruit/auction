@@ -1,0 +1,10 @@
+syntax = "proto3";
+package fatal_fruit.auction.v1;
+
+option go_package = "github.com/fatal-fruit/auction/types";
+
+//import "";
+//import "google/api/annotations.proto";
+//import "cosmos/base/query/v1beta1/pagination.proto";
+//import "cosmos/query/v1/query.proto";
+

@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package fatal_fruit.auction.module.v1;
+//
+//import "cosmos/app/v1alpha1/module.proto";
+
+// Module is the app config object of the module.
+// Learn more: https://docs.cosmos.network/main/building-modules/depinject

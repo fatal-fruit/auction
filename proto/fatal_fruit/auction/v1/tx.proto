@@ -1,0 +1,13 @@
+syntax = "proto3";
+package fatal_fruit.auction.v1;
+
+option go_package = "github.com/fatal-fruit/auction/types";
+
+//import "cosmos/msg/v1/msg.proto";
+//import "gogoproto/gogo.proto";
+//import "cosmos/base/v1beta1/coin.proto";
+//import "amino/amino.proto";
+//import "fatal_fruit/auction/v1/types.proto";
+//import "cosmos_proto/cosmos.proto";
+
+

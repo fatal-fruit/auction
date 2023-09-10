@@ -1,0 +1,15 @@
+pull_request_rules:
+  - name: Automatic merge on approval
+    conditions:
+      - "#approved-reviews-by>=1"
+    actions:
+      merge:
+        method: merge
+  - name: backport patches to v0.47 branch
+    conditions:
+      - base=main
+      - label=backport/v0.47
+    actions:
+      backport:
+        branches:
+          - release/v0.47
