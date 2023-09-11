@@ -381,7 +381,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// EventReserve is emitted on Msg/Reserve
 type EventAuction struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

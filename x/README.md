@@ -61,7 +61,7 @@ Indexes
   - Bid
     - For certain auction types like `ReserveAuction`, if a bid is submitted within the `ExtensionDuration`, the auction `Duration` will be extended by the preset `DurationAmount`
 - Execute Auction
-  - Every auction has a custom execution strategy that specifies how to settle assets betweent the Auctioneer and winner
+  - Every auction has a custom execution strategy that specifies how to settle assets between the Auctioneer and winner
 
 ### Endblock
 - Process Auction Queues
