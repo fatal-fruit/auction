@@ -1,15 +1,13 @@
 package keeper
 
 import (
-	"fmt"
-
-	"cosmossdk.io/log"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/core/store"
+	"cosmossdk.io/log"
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 )
 
@@ -32,6 +30,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
+
 	k := Keeper{
 		cdc:          cdc,
 		addressCodec: addressCodec,

@@ -1,16 +1,13 @@
 package keeper
 
-import (
-	"context"
-)
+import "github.com/fatal-fruit/auction/types"
 
 type msgServer struct {
 	k Keeper
 }
 
-func NewMsgServerImpl(keeper Keeper) {
-}
+var _ types.MsgServer = msgServer{}
 
-func (ms msgServer) Reserve(goCtx context.Context) {
-
+func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+	return &msgServer{k: keeper}
 }
