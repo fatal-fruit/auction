@@ -1,0 +1,11 @@
+syntax = "proto3";
+package fatal_fruit.auction.v1;
+
+option go_package = "github.com/fatal-fruit/auction/types";
+
+import "cosmos_proto/cosmos.proto";
+import "fatal_fruit/auction/v1/types.proto";
+
+// GenesisState defines the auction module's genesis state.
+message GenesisState {
+}
