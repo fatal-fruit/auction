@@ -4,14 +4,21 @@ Canonical implementation of general purpose permisionless auctions for the Cosmo
 
 ## Concepts
 
-`Reserve Auction`
-- Bid Protocol
+### Auctions
 
-`Dutch Auction`
-- Bid Protocol
+All auctions follow the same state transition logic, but how bids are processed or how the auction is settled depend on the auction type's unique configuration. The goal of `x/auction` is to offer a few default auction configurations in conjunction with a framework for further opportunity to customize auction mechanics and settlement rules.
 
-`Execution Strategies`
-- Simple Settle
+**Reserve Auction**
+
+The main auction type available is the `ReserveAuction`. Its bid processing rules are limited; a bid is accepted only if it is higher than the reserve price or the last submitted bid. Any bid submitted within its auctioneer defined `extension_duration` (the last few minutes before an auction closes for example), will automatically extend the auction duration by some amount of time.
+
+The default execution strategy for a Reserve Auction is the Simple Settle strategy.
+
+### Execution Strategies
+
+**Simple Settle**
+
+Simple Settle is an execution strategy evocative of its namesake; on execution, it will send the deposited asset to the winning bid, and the amount to the auctioneer. All other bids will be returned.
 
 ## State
 
@@ -24,6 +31,8 @@ Before an auction has closed, it is also persisted in one of four queues:
 - Cancelled Auctions
 
 When an auction gets executed, it is removed from the Pending queue updated a final time in the Auctions table.
+
+See the section on [data structures](./data_structures.md) for more information on auction mechanics. 
 
 ### Storage
 
@@ -45,6 +54,9 @@ Indexes
 ## State Transitions
 
 ### Auctions
+All auctions conform to the same state transitions. They can progress either through user interaction (like a bid or execution) or during the EndBlock process when the module has indicated their current state requires a status transition (like expiring or exceeding the execution duration).
+
+The following describe user initiated transitions:
 - New Auction
   - Initializes a new Auction in the Auction Table, and add to the `Active` auction queue
 - Canceled Auction
@@ -57,13 +69,17 @@ Indexes
   - Ammended Bid
     - Only applicable if auction is in `Active` queue
     - Bid must represent best effective price for specific `AuctionType`
-- Extended Auction
-  - Bid
-    - For certain auction types like `ReserveAuction`, if a bid is submitted within the `ExtensionDuration`, the auction `Duration` will be extended by the preset `DurationAmount`
 - Execute Auction
   - Every auction has a custom execution strategy that specifies how to settle assets between the Auctioneer and winner
 
+The following diagram illustrates possible user initiated transitions and the ensuing progressions managed by the module.
+
+![](./figures/auction_lifecycle_diagram.png)
+
 ### Endblock
+
+See the [EndBlock](#end-block) section for additional information.
+
 - Process Auction Queues
   - Active 
     - Iterate through all `Active` auctions that have officially elapsed their `Duration` and push to the `Expired` queue. 
@@ -81,11 +97,11 @@ Indexes
     - Remove auction from queue and update state in `Auction` table.
 
 ## Invariants
-- Auction may only be cancelled while no bids have been placed
-- If a bid is placed within the `ExtensionDuration` period, the auction is extended the same amount of time as the `ExtensionDuration` // TODO
-- Bids cannot be placed after `Duration` has elapsed
-- Bid amount must be above the auction's reserve price // TODO: Verify if in CheckTx
-- `Duration` cannot be ammended
+- Auction may only be cancelled while no bids have been placed.
+- Bids cannot be placed after auction `duration` has elapsed.
+- Bid amount must be the most competitive bid for a given auction type. For example, a reserve auction would only accept a bid with an asking price higher than either the reserve price or most recent bid.
+- Auction `duration` cannot be ammended.
+- If an auction exceeds the `exec_duration`, it will be cancelled and can no longer be executed. 
 
 ## Messages
 
@@ -174,28 +190,53 @@ message MsgExecuteAuctionMessage {
 ```
 
 ## End Block
-See [Endblock](#endblock)
+See [Endblock](#endblock) for a full description. 
 
-## Hooks
-
-Describe available hooks to be called by/from this module.
+![](./figures/auction_endblock_diagram.png)
 
 ## Events
 
-List and describe event tags used.
+**Auction Created**
+
+**Auction Expired**
+
+**Auction Executed**
+
+**Auction Cancelled**
 
 ## Client
 
-List and describe CLI commands and gRPC and REST endpoints.
+### CLI
+
+#### `tx`
+
+**Create Auction**
+
+**Cancel Auction**
+
+**Bid**
+
+**Ammend Bid**
+
+**Execute Auction**
+
+#### `query`
+
+**Get Auction By Id**
+
+**Get Auctions By Owner**
+
+**Get Bids By Auction**
+
 
 ## Params
 
 **Auction Expire Time**
 
-Expiration duration for pending auctions to be executed. If an auction in `PENDING` state exceeds this time, it will be cancelled and all bids refunded.
+Execution duration for pending auctions to be executed. If an auction in `PENDING` state exceeds this time, it will be cancelled and all bids refunded.
 ```json
 {
-  "auction_expire_time": "1209600" // 2 weeks
+  "execution_duration": "1209600" // 2 weeks
 }
 ```
 
