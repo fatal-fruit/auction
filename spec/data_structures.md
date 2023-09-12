@@ -18,7 +18,6 @@ type ExecutionStrategy interface {
     Execute(a Auction)    bool, error
 }
 
-// TODO: Change Name
 type SimpleSettleStrategy type {}
 
 type Auction interface {
