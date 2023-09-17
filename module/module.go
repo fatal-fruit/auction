@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
 
@@ -11,6 +12,7 @@ import (
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -106,6 +108,28 @@ func (AppModule) GetTxCmd() *cobra.Command {
 		RunE: client.ValidateCmd,
 	}
 
-	cmd.AddCommand()
+	cmd.AddCommand(
+		CreateAuction(),
+	)
+	return cmd
+}
+
+func CreateAuction() *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "create-auction",
+		Short: "Create a new auction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			sender := clientCtx.GetFromAddress()
+			cmd.Println(sender)
+			return nil
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

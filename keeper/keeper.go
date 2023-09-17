@@ -37,6 +37,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 		authority:    authority,
 		bk:           bk,
 		defaultDenom: denom,
+		Names:        collections.NewMap(sb, auctiontypes.NamesKey, "auction", collections.StringKey, codec.CollValue[auctiontypes.Name](cdc)),
 	}
 
 	schema, err := sb.Build()
