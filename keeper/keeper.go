@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/core/store"
@@ -68,6 +69,15 @@ func (k Keeper) GetAuthority() string {
 
 func (k Keeper) GetDefaultDenom() string {
 	return k.defaultDenom
+}
+
+func (k Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
+	moduleAddress := k.ak.GetModuleAddress(auctiontypes.ModuleName)
+	modAcc := k.ak.GetAccount(ctx, moduleAddress)
+	if modAcc == nil {
+		return sdk.Coin{}
+	}
+	return k.bk.GetBalance(ctx, modAcc.GetAddress(), denom)
 }
 
 // Logger returns a module-specific logger.

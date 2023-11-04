@@ -22,7 +22,13 @@ type testFixture struct {
 	msgServer   auctiontypes.MsgServer
 	queryServer auctiontypes.QueryServer
 
-	addrs []sdk.AccAddress
+	mockAcctKeeper    *auctiontestutil.MockAccountKeeper
+	mockBankKeeper    *auctiontestutil.MockBankKeeper
+	mockEscrowService *auctiontestutil.MockEscrowService
+
+	addrs      []sdk.AccAddress
+	modAccount *authtypes.ModuleAccount
+	modAddr    sdk.AccAddress
 }
 
 func initFixture(t *testing.T) *testFixture {
@@ -32,13 +38,13 @@ func initFixture(t *testing.T) *testFixture {
 	storeService := runtime.NewKVStoreService(storeKey)
 	addrs := simtestutil.CreateIncrementalAccounts(3)
 	authority := authtypes.NewModuleAddress("gov")
+	auctionModAddr := authtypes.NewModuleAddress(auctiontypes.ModuleName)
+	auctionAcct := authtypes.NewEmptyModuleAccount(auctiontypes.ModuleName, authtypes.Minter)
 
 	ctrl := gomock.NewController(t)
 	mockAcctKeeper := auctiontestutil.NewMockAccountKeeper(ctrl)
 	mockBankKeeper := auctiontestutil.NewMockBankKeeper(ctrl)
 	mockEscrowService := auctiontestutil.NewMockEscrowService(ctrl)
-
-	mockEscrowService.EXPECT().NewContract().Return(uint64(1), nil).AnyTimes()
 
 	k := keeper.NewKeeper(
 		encConfig.Codec,
@@ -56,10 +62,15 @@ func initFixture(t *testing.T) *testFixture {
 	}
 
 	return &testFixture{
-		ctx:         testCtx.Ctx,
-		k:           k,
-		msgServer:   keeper.NewMsgServerImpl(k),
-		queryServer: keeper.NewQueryServerImpl(k),
-		addrs:       addrs,
+		ctx:               testCtx.Ctx,
+		k:                 k,
+		msgServer:         keeper.NewMsgServerImpl(k),
+		queryServer:       keeper.NewQueryServerImpl(k),
+		addrs:             addrs,
+		modAccount:        auctionAcct,
+		modAddr:           auctionModAddr,
+		mockAcctKeeper:    mockAcctKeeper,
+		mockBankKeeper:    mockBankKeeper,
+		mockEscrowService: mockEscrowService,
 	}
 }

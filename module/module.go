@@ -101,9 +101,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 func (AppModule) GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  auctiontypes.ModuleName,
-		Args: cobra.ExactArgs(1),
-		RunE: client.ValidateCmd,
+		Use:                        auctiontypes.ModuleName,
+		Short:                      "auction transaction subcommands",
+		Long:                       "Commands for creating and executing auctions",
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
 	}
 
 	cmd.AddCommand()

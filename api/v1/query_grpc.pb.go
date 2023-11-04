@@ -19,14 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Counter_FullMethodName = "/fatal_fruit.auction.v1.Query/Counter"
+	Query_Auction_FullMethodName       = "/fatal_fruit.auction.v1.Query/Auction"
+	Query_OwnerAuctions_FullMethodName = "/fatal_fruit.auction.v1.Query/OwnerAuctions"
 )
 
 // QueryClient is the client API for Query service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueryClient interface {
-	Counter(ctx context.Context, in *QueryCounterRequest, opts ...grpc.CallOption) (*QueryCounterResponse, error)
+	Auction(ctx context.Context, in *QueryAuctionRequest, opts ...grpc.CallOption) (*QueryAuctionResponse, error)
+	OwnerAuctions(ctx context.Context, in *QueryOwnerAuctionsRequest, opts ...grpc.CallOption) (*QueryOwnerAuctionsResponse, error)
 }
 
 type queryClient struct {
@@ -37,9 +39,18 @@ func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
 	return &queryClient{cc}
 }
 
-func (c *queryClient) Counter(ctx context.Context, in *QueryCounterRequest, opts ...grpc.CallOption) (*QueryCounterResponse, error) {
-	out := new(QueryCounterResponse)
-	err := c.cc.Invoke(ctx, Query_Counter_FullMethodName, in, out, opts...)
+func (c *queryClient) Auction(ctx context.Context, in *QueryAuctionRequest, opts ...grpc.CallOption) (*QueryAuctionResponse, error) {
+	out := new(QueryAuctionResponse)
+	err := c.cc.Invoke(ctx, Query_Auction_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) OwnerAuctions(ctx context.Context, in *QueryOwnerAuctionsRequest, opts ...grpc.CallOption) (*QueryOwnerAuctionsResponse, error) {
+	out := new(QueryOwnerAuctionsResponse)
+	err := c.cc.Invoke(ctx, Query_OwnerAuctions_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +61,8 @@ func (c *queryClient) Counter(ctx context.Context, in *QueryCounterRequest, opts
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
 type QueryServer interface {
-	Counter(context.Context, *QueryCounterRequest) (*QueryCounterResponse, error)
+	Auction(context.Context, *QueryAuctionRequest) (*QueryAuctionResponse, error)
+	OwnerAuctions(context.Context, *QueryOwnerAuctionsRequest) (*QueryOwnerAuctionsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -58,8 +70,11 @@ type QueryServer interface {
 type UnimplementedQueryServer struct {
 }
 
-func (UnimplementedQueryServer) Counter(context.Context, *QueryCounterRequest) (*QueryCounterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Counter not implemented")
+func (UnimplementedQueryServer) Auction(context.Context, *QueryAuctionRequest) (*QueryAuctionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Auction not implemented")
+}
+func (UnimplementedQueryServer) OwnerAuctions(context.Context, *QueryOwnerAuctionsRequest) (*QueryOwnerAuctionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OwnerAuctions not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -74,20 +89,38 @@ func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
 	s.RegisterService(&Query_ServiceDesc, srv)
 }
 
-func _Query_Counter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryCounterRequest)
+func _Query_Auction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAuctionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).Counter(ctx, in)
+		return srv.(QueryServer).Auction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_Counter_FullMethodName,
+		FullMethod: Query_Auction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Counter(ctx, req.(*QueryCounterRequest))
+		return srv.(QueryServer).Auction(ctx, req.(*QueryAuctionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_OwnerAuctions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryOwnerAuctionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).OwnerAuctions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_OwnerAuctions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).OwnerAuctions(ctx, req.(*QueryOwnerAuctionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -100,8 +133,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Counter",
-			Handler:    _Query_Counter_Handler,
+			MethodName: "Auction",
+			Handler:    _Query_Auction_Handler,
+		},
+		{
+			MethodName: "OwnerAuctions",
+			Handler:    _Query_OwnerAuctions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

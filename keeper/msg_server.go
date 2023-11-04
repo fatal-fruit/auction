@@ -31,9 +31,15 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 	start := ctx.BlockTime()
 	end := start.Add(msg.Duration)
 
+	err = ms.k.bk.SendCoinsFromAccountToModule(goCtx, owner, auctiontypes.ModuleName, msg.Deposit)
+	if err != nil {
+		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error crediting auction deposit")
+	}
+
 	// Generate escrow contract
 	contractId, err := ms.k.es.NewContract()
 	if err != nil {
+		// TODO: Rollback deposit
 		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error creating escrow contract for auction")
 	}
 
@@ -50,6 +56,7 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 	ms.k.Logger(ctx).Info(auction.String())
 	err = ms.k.Auctions.Set(goCtx, id, auction)
 	if err != nil {
+		// TODO: Rollback deposit
 		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
 	}
 
