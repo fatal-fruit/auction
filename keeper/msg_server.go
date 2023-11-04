@@ -60,6 +60,21 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
 	}
 
+	hasAuctions, err := ms.k.OwnerAuctions.Has(goCtx, owner)
+	if err != nil {
+		return &auctiontypes.MsgNewAuctionResponse{}, err
+	}
+	var oa auctiontypes.OwnerAuctions
+	if hasAuctions {
+		oa, err = ms.k.OwnerAuctions.Get(goCtx, owner)
+		if err != nil {
+			return &auctiontypes.MsgNewAuctionResponse{}, err
+
+		}
+	}
+	oa.Ids = append(oa.Ids, id)
+	err = ms.k.OwnerAuctions.Set(goCtx, owner, oa)
+
 	return &auctiontypes.MsgNewAuctionResponse{
 		Id: id,
 	}, nil

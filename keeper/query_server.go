@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 )
 
@@ -28,5 +29,27 @@ func (qs queryServer) Auction(goCtx context.Context, r *auctiontypes.QueryAuctio
 }
 
 func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.QueryOwnerAuctionsRequest) (*auctiontypes.QueryOwnerAuctionsResponse, error) {
-	return &auctiontypes.QueryOwnerAuctionsResponse{}, nil
+	ownerAddress, err := sdk.AccAddressFromBech32(r.GetOwnerAddress())
+	if err != nil {
+		return &auctiontypes.QueryOwnerAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve owner address :: %s", r.GetOwnerAddress()))
+
+	}
+	ownerAuctions, err := qs.k.OwnerAuctions.Get(goCtx, ownerAddress)
+	if err != nil {
+		return &auctiontypes.QueryOwnerAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve owner auctions with address :: %s", ownerAddress))
+	}
+
+	var auctions []*auctiontypes.ReserveAuction
+
+	for _, id := range ownerAuctions.Ids {
+		a, err := qs.k.Auctions.Get(goCtx, id)
+		if err != nil {
+			return &auctiontypes.QueryOwnerAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve owner auctions with address :: %s", ownerAddress))
+		}
+		auctions = append(auctions, &a)
+	}
+
+	return &auctiontypes.QueryOwnerAuctionsResponse{
+		auctions,
+	}, nil
 }

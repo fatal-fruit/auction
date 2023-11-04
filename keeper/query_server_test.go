@@ -33,15 +33,10 @@ func TestQueryAuction(t *testing.T) {
 				res *auctiontypes.MsgNewAuctionResponse
 			} {
 				contractId := uint64(1)
-				//defaultModBalance := sdk.NewInt64Coin(sdk.DefaultBondDenom, 100000)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
 				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
-				//tf.mockAcctKeeper.EXPECT().GetAccount(tf.ctx, tf.modAddr).Return(tf.modAccount).AnyTimes()
-				//tf.mockAcctKeeper.EXPECT().GetModuleAddress(auctiontypes.ModuleName).Return(tf.modAddr).AnyTimes()
-				//tf.mockBankKeeper.EXPECT().GetBalance(tf.ctx, tf.modAddr, tf.k.GetDefaultDenom()).Return(defaultModBalance)
 				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep))
-				//tf.mockBankKeeper.EXPECT().GetBalance(tf.ctx, tf.modAddr, tf.k.GetDefaultDenom()).Return(defaultModBalance.Add(defaultDep))
 
 				msg := auctiontypes.MsgNewAuction{
 					Owner:        f.addrs[0].String(),
@@ -83,6 +78,91 @@ func TestQueryAuction(t *testing.T) {
 				require.EqualValues(queryRes.Auction.ReservePrice, auction.ReservePrice)
 				require.EqualValues(queryRes.Auction.StartTime, auction.StartTime)
 				require.EqualValues(queryRes.Auction.EndTime, auction.EndTime)
+			}
+		})
+	}
+
+}
+
+func TestQueryOwnerAuctions(t *testing.T) {
+	f := initFixture(t)
+	require := require.New(t)
+
+	testCases := []struct {
+		name      string
+		owner     sdk.AccAddress
+		req       auctiontypes.MsgNewAuction
+		expErr    bool
+		setupTest func(fixture *testFixture) struct {
+			ownerAuctions []uint64
+		}
+	}{
+		{
+			name:  "retrieve owner's auctions",
+			owner: f.addrs[0],
+			req: auctiontypes.MsgNewAuction{
+				Owner:        f.addrs[0].String(),
+				Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000)),
+				ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+				Duration:     time.Duration(30) * time.Second,
+				AuctionType:  auctiontypes.RESERVE,
+			},
+			setupTest: func(tf *testFixture) struct {
+				ownerAuctions []uint64
+			} {
+				contractId := uint64(1)
+				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
+
+				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
+				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(2)
+
+				msg1 := auctiontypes.MsgNewAuction{
+					Owner:        f.addrs[0].String(),
+					Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000)),
+					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					Duration:     time.Duration(30) * time.Second,
+					AuctionType:  auctiontypes.RESERVE,
+				}
+				msg2 := auctiontypes.MsgNewAuction{
+					Owner:        f.addrs[0].String(),
+					Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000)),
+					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 5000),
+					Duration:     time.Duration(20) * time.Second,
+					AuctionType:  auctiontypes.RESERVE,
+				}
+				msgRes1, err := f.msgServer.NewAuction(f.ctx, &msg1)
+				require.NoError(err)
+				msgRes2, err := f.msgServer.NewAuction(f.ctx, &msg2)
+				require.NoError(err)
+				return struct {
+					ownerAuctions []uint64
+				}{
+					[]uint64{msgRes1.GetId(), msgRes2.GetId()},
+				}
+			},
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			msgRes := tc.setupTest(f)
+			queryRes, err := f.queryServer.OwnerAuctions(f.ctx, &auctiontypes.QueryOwnerAuctionsRequest{
+				OwnerAddress: tc.owner.String(),
+			})
+
+			if tc.expErr {
+				require.Error(err)
+			} else {
+				require.NoError(err)
+				var expectedAuctions []auctiontypes.ReserveAuction
+				for _, aId := range msgRes.ownerAuctions {
+					a, err := f.k.Auctions.Get(f.ctx, aId)
+					require.NoError(err)
+					expectedAuctions = append(expectedAuctions, a)
+				}
+
+				require.NotNil(queryRes.Auctions)
+				require.Equal(len(queryRes.Auctions), len(expectedAuctions))
 			}
 		})
 	}
