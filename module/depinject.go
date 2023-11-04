@@ -36,7 +36,9 @@ type ModuleInputs struct {
 	StoreService store.KVStoreService
 	AddressCodec address.Codec
 
-	BankKeeper auctiontypes.BankKeeper
+	AccountKeeper auctiontypes.AccountKeeper
+	BankKeeper    auctiontypes.BankKeeper
+	EscrowService auctiontypes.EscrowService
 
 	Config *modulev1.Module
 }
@@ -55,7 +57,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
 
-	k := keeper.NewKeeper(in.Cdc, in.AddressCodec, in.StoreService, authority.String(), in.BankKeeper, in.Config.DefaultDenom)
+	k := keeper.NewKeeper(in.Cdc, in.AddressCodec, in.StoreService, authority.String(), in.AccountKeeper, in.BankKeeper, in.EscrowService, in.Config.DefaultDenom)
 	m := NewAppModule(in.Cdc, k)
 
 	return ModuleOutputs{Module: m, Keeper: k}

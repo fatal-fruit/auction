@@ -17,25 +17,35 @@ type Keeper struct {
 
 	authority string
 
+	ak           auctiontypes.AccountKeeper
 	bk           auctiontypes.BankKeeper
+	es           auctiontypes.EscrowService
 	defaultDenom string
 
 	// state management
-	Schema collections.Schema
+	Schema        collections.Schema
+	IDs           collections.Sequence
+	Auctions      collections.Map[uint64, auctiontypes.ReserveAuction]
+	OwnerAuctions collections.Map[sdk.AccAddress, auctiontypes.OwnerAuctions]
 }
 
-func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, bk auctiontypes.BankKeeper, denom string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, es auctiontypes.EscrowService, denom string) Keeper {
 	if _, err := addressCodec.StringToBytes(authority); err != nil {
 		panic(fmt.Errorf("invalid authority address: %w", err))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
+	ids := collections.NewSequence(sb, auctiontypes.IDKey, "auctionIds")
+	auctions := collections.NewMap(sb, auctiontypes.AuctionsKey, "auctions", collections.Uint64Key, codec.CollValue[auctiontypes.ReserveAuction](cdc))
+	ownerAuctions := collections.NewMap(sb, auctiontypes.OwnerAuctionsKey, "ownerAuctions", sdk.AccAddressKey, codec.CollValue[auctiontypes.OwnerAuctions](cdc))
 
 	k := Keeper{
 		cdc:          cdc,
 		addressCodec: addressCodec,
 		authority:    authority,
+		ak:           ak,
 		bk:           bk,
+		es:           es,
 		defaultDenom: denom,
 	}
 
@@ -45,12 +55,19 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	}
 
 	k.Schema = schema
+	k.IDs = ids
+	k.Auctions = auctions
+	k.OwnerAuctions = ownerAuctions
 
 	return k
 }
 
 func (k Keeper) GetAuthority() string {
 	return k.authority
+}
+
+func (k Keeper) GetDefaultDenom() string {
+	return k.defaultDenom
 }
 
 // Logger returns a module-specific logger.
