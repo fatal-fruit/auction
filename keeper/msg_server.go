@@ -51,6 +51,7 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 		ReservePrice:   msg.ReservePrice,
 		StartTime:      start,
 		EndTime:        end,
+		Bids:           []*auctiontypes.Bid{},
 	}
 
 	ms.k.Logger(ctx).Info(auction.String())
@@ -73,9 +74,61 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 		}
 	}
 	oa.Ids = append(oa.Ids, id)
+
+	// Set Auctions by Owner
 	err = ms.k.OwnerAuctions.Set(goCtx, owner, oa)
+	if err != nil {
+		return &auctiontypes.MsgNewAuctionResponse{}, err
+	}
+
+	// Push auction to ActiveAuction Queue
+	err = ms.k.ActiveAuctions.Set(goCtx, id)
+	if err != nil {
+		return &auctiontypes.MsgNewAuctionResponse{}, err
+	}
 
 	return &auctiontypes.MsgNewAuctionResponse{
 		Id: id,
 	}, nil
+}
+
+func (ms msgServer) NewBid(goCtx context.Context, msg *auctiontypes.MsgNewBid) (*auctiontypes.MsgNewBidResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	// get auction from active auctions
+	hasAuction, err := ms.k.ActiveAuctions.Has(goCtx, msg.GetAuctionId())
+	if err != nil {
+		return &auctiontypes.MsgNewBidResponse{}, err
+	}
+	if hasAuction {
+		auction, err := ms.k.Auctions.Get(goCtx, msg.GetAuctionId())
+		if err != nil {
+			return &auctiontypes.MsgNewBidResponse{}, err
+		}
+
+		// Validate bid price is comepetitive
+		if msg.Bid.IsLT(auction.ReservePrice) {
+			return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("invalid bid price")
+		}
+
+		// Validate auction is active
+		if ctx.BlockTime().After(auction.EndTime) {
+			return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("expired auction")
+		}
+
+		auction.Bids = append(auction.Bids, &auctiontypes.Bid{
+			AuctionId: msg.AuctionId,
+			Bidder:    msg.Owner,
+			BidPrice:  msg.Bid,
+			Timestamp: ctx.BlockTime(),
+		})
+
+		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
+		if err != nil {
+			return &auctiontypes.MsgNewBidResponse{}, err
+		}
+	} else {
+		return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("invalid auction id")
+	}
+
+	return &auctiontypes.MsgNewBidResponse{}, nil
 }

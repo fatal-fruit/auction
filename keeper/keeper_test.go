@@ -12,8 +12,10 @@ import (
 	"github.com/fatal-fruit/auction/keeper"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"testing"
+	"time"
 )
 
 type testFixture struct {
@@ -73,4 +75,36 @@ func initFixture(t *testing.T) *testFixture {
 		mockBankKeeper:    mockBankKeeper,
 		mockEscrowService: mockEscrowService,
 	}
+}
+
+func TestProcessActiveAuctions(t *testing.T) {
+	f := initFixture(t)
+	require := require.New(t)
+
+	id, err := f.k.IDs.Next(f.ctx)
+	require.NoError(err)
+	auction := auctiontypes.ReserveAuction{
+		Id:             id,
+		Owner:          f.addrs[0].String(),
+		AuctionType:    auctiontypes.RESERVE,
+		EscrowContract: 1,
+		ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+		StartTime:      time.Now().Add(-30 * time.Second),
+		EndTime:        time.Now().Add(-1 * time.Second),
+		Bids:           []*auctiontypes.Bid{},
+	}
+	err = f.k.Auctions.Set(f.ctx, id, auction)
+	require.NoError(err)
+	err = f.k.ActiveAuctions.Set(f.ctx, id)
+	require.NoError(err)
+
+	f.k.ProcessActiveAuctions(f.ctx)
+	isActive, err := f.k.ActiveAuctions.Has(f.ctx, id)
+	require.False(isActive)
+	isExpired, err := f.k.ExpiredAuctions.Has(f.ctx, id)
+	require.True(isExpired)
+}
+
+func TestProcessExpiredAuctions(t *testing.T) {
+
 }

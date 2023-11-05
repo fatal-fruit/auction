@@ -9,12 +9,10 @@ const (
 )
 
 var (
-	NamesKey  = collections.NewPrefix(0)
-	OwnersKey = collections.NewPrefix(1)
-)
-
-var (
-	IDKey            = collections.NewPrefix(0)
-	AuctionsKey      = collections.NewPrefix(1)
-	OwnerAuctionsKey = collections.NewPrefix(2)
+	IDKey                = collections.NewPrefix(0)
+	AuctionsKey          = collections.NewPrefix(1)
+	OwnerAuctionsKey     = collections.NewPrefix(2)
+	ActiveAuctionsKey    = collections.NewPrefix(3)
+	ExpiredAuctionsKey   = collections.NewPrefix(4)
+	CancelledAuctionsKey = collections.NewPrefix(5)
 )

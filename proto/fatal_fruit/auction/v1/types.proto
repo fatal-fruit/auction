@@ -29,8 +29,28 @@ message ReserveAuction {
   [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
   google.protobuf.Timestamp end_time = 7
   [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
+
+  repeated Bid bids = 8;
 }
 
 message OwnerAuctions {
   repeated uint64 ids = 1;
+}
+
+message AuctionIds {
+  repeated uint64 ids = 1;
+}
+
+message Bid {
+  uint64 auction_id = 1;
+  string bidder = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  cosmos.base.v1beta1.Coin bid_price = 3 [
+    (gogoproto.nullable)     = false,
+    (amino.dont_omitempty)   = true,
+    (amino.encoding)         = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  google.protobuf.Timestamp timestamp = 4
+  [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
 }

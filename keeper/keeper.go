@@ -28,6 +28,12 @@ type Keeper struct {
 	IDs           collections.Sequence
 	Auctions      collections.Map[uint64, auctiontypes.ReserveAuction]
 	OwnerAuctions collections.Map[sdk.AccAddress, auctiontypes.OwnerAuctions]
+
+	// Queues
+	ActiveAuctions    collections.KeySet[uint64]
+	ExpiredAuctions   collections.KeySet[uint64]
+	PendingAuctions   collections.KeySet[uint64]
+	CancelledAuctions collections.KeySet[uint64]
 }
 
 func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, es auctiontypes.EscrowService, denom string) Keeper {
@@ -39,6 +45,9 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	ids := collections.NewSequence(sb, auctiontypes.IDKey, "auctionIds")
 	auctions := collections.NewMap(sb, auctiontypes.AuctionsKey, "auctions", collections.Uint64Key, codec.CollValue[auctiontypes.ReserveAuction](cdc))
 	ownerAuctions := collections.NewMap(sb, auctiontypes.OwnerAuctionsKey, "ownerAuctions", sdk.AccAddressKey, codec.CollValue[auctiontypes.OwnerAuctions](cdc))
+	activeAuctions := collections.NewKeySet(sb, auctiontypes.ActiveAuctionsKey, "activeAuctions", collections.Uint64Key)
+	expiredAuctions := collections.NewKeySet(sb, auctiontypes.ExpiredAuctionsKey, "expiredAuctions", collections.Uint64Key)
+	cancelledAuctions := collections.NewKeySet(sb, auctiontypes.CancelledAuctionsKey, "cancelledAuctions", collections.Uint64Key)
 
 	k := Keeper{
 		cdc:          cdc,
@@ -59,6 +68,9 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	k.IDs = ids
 	k.Auctions = auctions
 	k.OwnerAuctions = ownerAuctions
+	k.ActiveAuctions = activeAuctions
+	k.ExpiredAuctions = expiredAuctions
+	k.CancelledAuctions = cancelledAuctions
 
 	return k
 }
@@ -83,4 +95,36 @@ func (k Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
 // Logger returns a module-specific logger.
 func (keeper Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/"+auctiontypes.ModuleName)
+}
+
+func (keeper Keeper) ProcessActiveAuctions(goCtx context.Context) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	var cancelled []uint64
+	err := keeper.ActiveAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
+		auction, err := keeper.Auctions.Get(ctx, auctionId)
+		if err != nil {
+			return true, err
+		}
+		if auction.EndTime.Before(ctx.BlockTime()) {
+			cancelled = append(cancelled, auctionId)
+		}
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, ca := range cancelled {
+		err = keeper.ActiveAuctions.Remove(goCtx, ca)
+		if err != nil {
+			panic(err)
+		}
+		err = keeper.ExpiredAuctions.Set(goCtx, ca)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (keeper Keeper) ProcessExpiredAuctions(goCtx context.Context) {
+
 }
