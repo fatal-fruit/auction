@@ -139,3 +139,8 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *auctiontypes.MsgNewBid) (
 
 	return &auctiontypes.MsgNewBidResponse{}, nil
 }
+
+func (ms msgServer) Exec(goCtx context.Context, msg *auctiontypes.MsgExecAuction) (*auctiontypes.MsgExecAuctionResponse, error) {
+
+	return &auctiontypes.MsgExecAuctionResponse{}, nil
+}

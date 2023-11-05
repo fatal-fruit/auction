@@ -48,6 +48,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	activeAuctions := collections.NewKeySet(sb, auctiontypes.ActiveAuctionsKey, "activeAuctions", collections.Uint64Key)
 	expiredAuctions := collections.NewKeySet(sb, auctiontypes.ExpiredAuctionsKey, "expiredAuctions", collections.Uint64Key)
 	cancelledAuctions := collections.NewKeySet(sb, auctiontypes.CancelledAuctionsKey, "cancelledAuctions", collections.Uint64Key)
+	pendingAuctions := collections.NewKeySet(sb, auctiontypes.PendingAuctionsKey, "pendingAuctions", collections.Uint64Key)
 
 	k := Keeper{
 		cdc:          cdc,
@@ -71,6 +72,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	k.ActiveAuctions = activeAuctions
 	k.ExpiredAuctions = expiredAuctions
 	k.CancelledAuctions = cancelledAuctions
+	k.PendingAuctions = pendingAuctions
 
 	return k
 }

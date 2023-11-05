@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Msg_NewAuction_FullMethodName = "/fatal_fruit.auction.v1.Msg/NewAuction"
 	Msg_NewBid_FullMethodName     = "/fatal_fruit.auction.v1.Msg/NewBid"
+	Msg_Exec_FullMethodName       = "/fatal_fruit.auction.v1.Msg/Exec"
 )
 
 // MsgClient is the client API for Msg service.
@@ -29,6 +30,7 @@ const (
 type MsgClient interface {
 	NewAuction(ctx context.Context, in *MsgNewAuction, opts ...grpc.CallOption) (*MsgNewAuctionResponse, error)
 	NewBid(ctx context.Context, in *MsgNewBid, opts ...grpc.CallOption) (*MsgNewBidResponse, error)
+	Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.CallOption) (*MsgExecAuctionResponse, error)
 }
 
 type msgClient struct {
@@ -57,12 +59,22 @@ func (c *msgClient) NewBid(ctx context.Context, in *MsgNewBid, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *msgClient) Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.CallOption) (*MsgExecAuctionResponse, error) {
+	out := new(MsgExecAuctionResponse)
+	err := c.cc.Invoke(ctx, Msg_Exec_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
 	NewAuction(context.Context, *MsgNewAuction) (*MsgNewAuctionResponse, error)
 	NewBid(context.Context, *MsgNewBid) (*MsgNewBidResponse, error)
+	Exec(context.Context, *MsgExecAuction) (*MsgExecAuctionResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedMsgServer) NewAuction(context.Context, *MsgNewAuction) (*MsgN
 }
 func (UnimplementedMsgServer) NewBid(context.Context, *MsgNewBid) (*MsgNewBidResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewBid not implemented")
+}
+func (UnimplementedMsgServer) Exec(context.Context, *MsgExecAuction) (*MsgExecAuctionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Exec not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -125,6 +140,24 @@ func _Msg_NewBid_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_Exec_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgExecAuction)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Exec(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_Exec_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Exec(ctx, req.(*MsgExecAuction))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewBid",
 			Handler:    _Msg_NewBid_Handler,
+		},
+		{
+			MethodName: "Exec",
+			Handler:    _Msg_Exec_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

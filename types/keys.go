@@ -15,4 +15,5 @@ var (
 	ActiveAuctionsKey    = collections.NewPrefix(3)
 	ExpiredAuctionsKey   = collections.NewPrefix(4)
 	CancelledAuctionsKey = collections.NewPrefix(5)
+	PendingAuctionsKey   = collections.NewPrefix(6)
 )

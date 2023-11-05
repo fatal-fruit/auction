@@ -108,5 +108,71 @@ func TestProcessActiveAuctions(t *testing.T) {
 }
 
 func TestProcessExpiredAuctions(t *testing.T) {
+	f := initFixture(t)
+	require := require.New(t)
 
+	id1, err := f.k.IDs.Next(f.ctx)
+	require.NoError(err)
+	id2, err := f.k.IDs.Next(f.ctx)
+	require.NoError(err)
+
+	auctions := []auctiontypes.ReserveAuction{
+		{
+			Id:             id1,
+			Owner:          f.addrs[0].String(),
+			AuctionType:    auctiontypes.RESERVE,
+			EscrowContract: 1,
+			ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+			StartTime:      time.Now().Add(-30 * time.Second),
+			EndTime:        time.Now().Add(-1 * time.Second),
+			LastPrice:      sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+			Bids: []*auctiontypes.Bid{
+				{
+					AuctionId: id1,
+					Bidder:    f.addrs[1].String(),
+					BidPrice:  sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+					Timestamp: time.Now(),
+				},
+			},
+		},
+		{
+			Id:             id2,
+			Owner:          f.addrs[0].String(),
+			AuctionType:    auctiontypes.RESERVE,
+			EscrowContract: 1,
+			ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+			StartTime:      time.Now().Add(-30 * time.Second),
+			EndTime:        time.Now().Add(-1 * time.Second),
+			Bids:           []*auctiontypes.Bid{},
+		},
+	}
+
+	for _, a := range auctions {
+		err = f.k.Auctions.Set(f.ctx, a.GetId(), a)
+		require.NoError(err)
+		err = f.k.ExpiredAuctions.Set(f.ctx, a.GetId())
+		require.NoError(err)
+	}
+
+	for _, a := range auctions {
+		isExpired, err := f.k.ExpiredAuctions.Has(f.ctx, a.GetId())
+		require.True(isExpired)
+		require.NoError(err)
+	}
+
+	f.k.ProcessExpiredAuctions(f.ctx)
+
+	for _, a := range auctions {
+		isExpired, err := f.k.ExpiredAuctions.Has(f.ctx, a.GetId())
+		require.False(isExpired)
+		require.NoError(err)
+	}
+
+	isPending, err := f.k.PendingAuctions.Has(f.ctx, id1)
+	require.True(isPending)
+	require.NoError(err)
+
+	isCancelled, err := f.k.CancelledAuctions.Has(f.ctx, id2)
+	require.True(isCancelled)
+	require.NoError(err)
 }
