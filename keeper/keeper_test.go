@@ -101,7 +101,9 @@ func TestProcessActiveAuctions(t *testing.T) {
 	f.k.ProcessActiveAuctions(f.ctx)
 	isActive, err := f.k.ActiveAuctions.Has(f.ctx, id)
 	require.False(isActive)
+	require.NoError(err)
 	isExpired, err := f.k.ExpiredAuctions.Has(f.ctx, id)
+	require.NoError(err)
 	require.True(isExpired)
 }
 

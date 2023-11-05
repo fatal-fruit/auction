@@ -31,6 +31,12 @@ message ReserveAuction {
   [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
 
   repeated Bid bids = 8;
+  cosmos.base.v1beta1.Coin last_price = 9 [
+    (gogoproto.nullable)     = false,
+    (amino.dont_omitempty)   = true,
+    (amino.encoding)         = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
 }
 
 message OwnerAuctions {

@@ -167,12 +167,6 @@ func TestNewBid(t *testing.T) {
 			setupTest: func(tf *testFixture) struct {
 				contractId uint64
 			} {
-				//contractId := uint64(1)
-				//defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
-
-				//tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
-				//tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
-
 				id, err := f.k.IDs.Next(f.ctx)
 				require.NoError(err)
 				auction := auctiontypes.ReserveAuction{
@@ -184,6 +178,46 @@ func TestNewBid(t *testing.T) {
 					StartTime:      time.Now().Add(-30 * time.Second),
 					EndTime:        time.Now().Add(-1 * time.Second),
 					Bids:           []*auctiontypes.Bid{},
+				}
+				err = f.k.Auctions.Set(f.ctx, id, auction)
+				require.NoError(err)
+				err = f.k.ActiveAuctions.Set(f.ctx, id)
+				require.NoError(err)
+
+				return struct {
+					contractId uint64
+				}{
+					id,
+				}
+			},
+		},
+		{
+			name:   "bid lower than competitive bid",
+			owner:  f.addrs[2],
+			bid:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+			expErr: true,
+			setupTest: func(tf *testFixture) struct {
+				contractId uint64
+			} {
+				id, err := f.k.IDs.Next(f.ctx)
+				require.NoError(err)
+				auction := auctiontypes.ReserveAuction{
+					Id:             id,
+					Owner:          f.addrs[0].String(),
+					AuctionType:    auctiontypes.RESERVE,
+					EscrowContract: 1,
+					ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					StartTime:      time.Now(),
+					EndTime:        time.Now().Add(30 * time.Second),
+					LastPrice:      sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+					Bids: []*auctiontypes.Bid{
+						{
+							AuctionId: id,
+							Bidder:    f.addrs[1].String(),
+							BidPrice:  sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+							Timestamp: time.Now(),
+						},
+					},
 				}
 				err = f.k.Auctions.Set(f.ctx, id, auction)
 				require.NoError(err)
@@ -218,6 +252,7 @@ func TestNewBid(t *testing.T) {
 				require.Equal(bd.BidPrice, tc.bid)
 				require.Equal(bd.AuctionId, msgRes.contractId)
 				require.Equal(bd.Bidder, tc.owner.String())
+				require.Equal(auction.LastPrice, bd.BidPrice)
 			}
 		})
 	}

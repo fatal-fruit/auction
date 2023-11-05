@@ -105,14 +105,19 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *auctiontypes.MsgNewBid) (
 			return &auctiontypes.MsgNewBidResponse{}, err
 		}
 
-		// Validate bid price is comepetitive
+		// Validate bid price is over Reserve Price
 		if msg.Bid.IsLT(auction.ReservePrice) {
-			return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("invalid bid price")
+			return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("bid lower than reserve price")
 		}
 
 		// Validate auction is active
 		if ctx.BlockTime().After(auction.EndTime) {
 			return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("expired auction")
+		}
+
+		// Validate bid price is competitive
+		if len(auction.Bids) > 0 && msg.Bid.IsLTE(auction.LastPrice) {
+			return &auctiontypes.MsgNewBidResponse{}, fmt.Errorf("bid lower than latest price")
 		}
 
 		auction.Bids = append(auction.Bids, &auctiontypes.Bid{
@@ -121,6 +126,8 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *auctiontypes.MsgNewBid) (
 			BidPrice:  msg.Bid,
 			Timestamp: ctx.BlockTime(),
 		})
+
+		auction.LastPrice = msg.Bid
 
 		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 		if err != nil {

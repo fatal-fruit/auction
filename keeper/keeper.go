@@ -75,15 +75,15 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	return k
 }
 
-func (k Keeper) GetAuthority() string {
+func (k *Keeper) GetAuthority() string {
 	return k.authority
 }
 
-func (k Keeper) GetDefaultDenom() string {
+func (k *Keeper) GetDefaultDenom() string {
 	return k.defaultDenom
 }
 
-func (k Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
+func (k *Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
 	moduleAddress := k.ak.GetModuleAddress(auctiontypes.ModuleName)
 	modAcc := k.ak.GetAccount(ctx, moduleAddress)
 	if modAcc == nil {
@@ -93,19 +93,50 @@ func (k Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
 }
 
 // Logger returns a module-specific logger.
-func (keeper Keeper) Logger(ctx sdk.Context) log.Logger {
+func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/"+auctiontypes.ModuleName)
 }
 
-func (keeper Keeper) ProcessActiveAuctions(goCtx context.Context) {
+func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	var cancelled []uint64
-	err := keeper.ActiveAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
-		auction, err := keeper.Auctions.Get(ctx, auctionId)
+	var expired []uint64
+	err := k.ActiveAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
+		auction, err := k.Auctions.Get(ctx, auctionId)
 		if err != nil {
 			return true, err
 		}
 		if auction.EndTime.Before(ctx.BlockTime()) {
+			expired = append(expired, auctionId)
+		}
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, exp := range expired {
+		err = k.ActiveAuctions.Remove(goCtx, exp)
+		if err != nil {
+			panic(err)
+		}
+		err = k.ExpiredAuctions.Set(goCtx, exp)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	var pending []uint64
+	var cancelled []uint64
+	err := k.ExpiredAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
+		auction, err := k.Auctions.Get(ctx, auctionId)
+		if err != nil {
+			return true, err
+		}
+		if len(auction.Bids) > 0 {
+			pending = append(pending, auctionId)
+		} else {
 			cancelled = append(cancelled, auctionId)
 		}
 		return false, nil
@@ -113,18 +144,26 @@ func (keeper Keeper) ProcessActiveAuctions(goCtx context.Context) {
 	if err != nil {
 		panic(err)
 	}
-	for _, ca := range cancelled {
-		err = keeper.ActiveAuctions.Remove(goCtx, ca)
+	// If no bids -> cancelled
+	for _, c := range cancelled {
+		err = k.ExpiredAuctions.Remove(goCtx, c)
 		if err != nil {
 			panic(err)
 		}
-		err = keeper.ExpiredAuctions.Set(goCtx, ca)
+		err = k.CancelledAuctions.Set(goCtx, c)
 		if err != nil {
 			panic(err)
 		}
 	}
-}
-
-func (keeper Keeper) ProcessExpiredAuctions(goCtx context.Context) {
-
+	// If at least 1 bid -> pending
+	for _, p := range pending {
+		err = k.ExpiredAuctions.Remove(goCtx, p)
+		if err != nil {
+			panic(err)
+		}
+		err = k.PendingAuctions.Set(goCtx, p)
+		if err != nil {
+			panic(err)
+		}
+	}
 }

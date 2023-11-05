@@ -50,6 +50,6 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 	}
 
 	return &auctiontypes.QueryOwnerAuctionsResponse{
-		auctions,
+		Auctions: auctions,
 	}, nil
 }
