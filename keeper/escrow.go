@@ -19,6 +19,12 @@ type EscrowModContract struct {
 	Address sdk.AccAddress
 }
 
+func NewEscrowModule(ak types.AccountKeeper) types.EscrowService {
+	return &EscrowModule{
+		ak: ak,
+	}
+}
+
 func (em *EscrowModule) NewContract(ctx context.Context, id uint64) (types.EscrowContract, error) {
 	// Generate account address of contract
 	var accountAddr sdk.AccAddress
@@ -52,7 +58,11 @@ func (em *EscrowModule) NewContract(ctx context.Context, id uint64) (types.Escro
 	}, nil
 }
 
-func (em *EscrowModule) Release(address sdk.AccAddress) error {
+func (em *EscrowModule) Release(id uint64, address sdk.AccAddress) error {
+	fmt.Println("hello")
+	fmt.Println(id)
+	fmt.Println(address)
+
 	// TODO: Implement
 	return nil
 }

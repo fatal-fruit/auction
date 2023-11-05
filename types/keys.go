@@ -5,8 +5,15 @@ import "cosmossdk.io/collections"
 const (
 	ModuleName = "auction"
 	StoreKey   = "auction"
-	RESERVE    = "RESERVE"
-	SETTLE     = "SETTLE"
+	// Auction Types
+	RESERVE = "RESERVE"
+
+	// Strategy Types
+	SETTLE = "SETTLE"
+
+	// Auction Status
+	ACTIVE = "ACTIVE"
+	CLOSED = "CLOSED"
 )
 
 var (

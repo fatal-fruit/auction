@@ -36,26 +36,21 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error crediting auction deposit")
 	}
 
-	// Generate escrow contract
-	contract, err := ms.k.es.NewContract(goCtx, 1)
+	strategy, err := BuildSettleStrategy(goCtx, ms.k.es)
 	if err != nil {
 		// TODO: Rollback deposit
 		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error creating escrow contract for auction")
 	}
 	auction := auctiontypes.ReserveAuction{
-		Id:             id,
-		Owner:          owner.String(),
-		AuctionType:    msg.AuctionType,
-		EscrowContract: contract.GetId(),
-		ReservePrice:   msg.ReservePrice,
-		StartTime:      start,
-		EndTime:        end,
-		Bids:           []*auctiontypes.Bid{},
-		Strategy: &auctiontypes.SettleStrategy{
-			StrategyType:          auctiontypes.SETTLE,
-			EscrowContractId:      contract.GetId(),
-			EscrowContractAddress: contract.GetAddress().String(),
-		},
+		Id:           id,
+		Status:       auctiontypes.ACTIVE,
+		Owner:        owner.String(),
+		AuctionType:  msg.AuctionType,
+		ReservePrice: msg.ReservePrice,
+		StartTime:    start,
+		EndTime:      end,
+		Bids:         []*auctiontypes.Bid{},
+		Strategy:     strategy.ToProto(),
 	}
 
 	ms.k.Logger(ctx).Info(auction.String())
@@ -145,6 +140,36 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *auctiontypes.MsgNewBid) (
 }
 
 func (ms msgServer) Exec(goCtx context.Context, msg *auctiontypes.MsgExecAuction) (*auctiontypes.MsgExecAuctionResponse, error) {
+	// Check auction is in pending
+	isPending, err := ms.k.PendingAuctions.Has(goCtx, msg.GetAuctionId())
+	if err != nil {
+		return &auctiontypes.MsgExecAuctionResponse{}, err
+	}
+	if !isPending {
+		return &auctiontypes.MsgExecAuctionResponse{}, fmt.Errorf("auction is not executable")
+	}
+	//
+	auction, err := ms.k.Auctions.Get(goCtx, msg.GetAuctionId())
+	if err != nil {
+		return &auctiontypes.MsgExecAuctionResponse{}, err
+	}
+
+	// execute strategy
+	exeuctionStrat := SettleStrategy{auction.Strategy}
+	err = exeuctionStrat.ExecuteStrategy(ms.k.es)
+	//auction.Strategy
+
+	// remove from pending
+	err = ms.k.PendingAuctions.Remove(goCtx, msg.GetAuctionId())
+	if err != nil {
+		return &auctiontypes.MsgExecAuctionResponse{}, err
+	}
+	//update status
+	auction.Status = auctiontypes.CLOSED
+	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
+	if err != nil {
+		return &auctiontypes.MsgExecAuctionResponse{}, err
+	}
 
 	return &auctiontypes.MsgExecAuctionResponse{}, nil
 }

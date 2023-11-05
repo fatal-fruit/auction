@@ -84,14 +84,14 @@ func TestProcessActiveAuctions(t *testing.T) {
 	id, err := f.k.IDs.Next(f.ctx)
 	require.NoError(err)
 	auction := auctiontypes.ReserveAuction{
-		Id:             id,
-		Owner:          f.addrs[0].String(),
-		AuctionType:    auctiontypes.RESERVE,
-		EscrowContract: 1,
-		ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
-		StartTime:      time.Now().Add(-30 * time.Second),
-		EndTime:        time.Now().Add(-1 * time.Second),
-		Bids:           []*auctiontypes.Bid{},
+		Id:           id,
+		Status:       auctiontypes.ACTIVE,
+		Owner:        f.addrs[0].String(),
+		AuctionType:  auctiontypes.RESERVE,
+		ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+		StartTime:    time.Now().Add(-30 * time.Second),
+		EndTime:      time.Now().Add(-1 * time.Second),
+		Bids:         []*auctiontypes.Bid{},
 	}
 	err = f.k.Auctions.Set(f.ctx, id, auction)
 	require.NoError(err)
@@ -118,14 +118,14 @@ func TestProcessExpiredAuctions(t *testing.T) {
 
 	auctions := []auctiontypes.ReserveAuction{
 		{
-			Id:             id1,
-			Owner:          f.addrs[0].String(),
-			AuctionType:    auctiontypes.RESERVE,
-			EscrowContract: 1,
-			ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
-			StartTime:      time.Now().Add(-30 * time.Second),
-			EndTime:        time.Now().Add(-1 * time.Second),
-			LastPrice:      sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+			Id:           id1,
+			Status:       auctiontypes.ACTIVE,
+			Owner:        f.addrs[0].String(),
+			AuctionType:  auctiontypes.RESERVE,
+			ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+			StartTime:    time.Now().Add(-30 * time.Second),
+			EndTime:      time.Now().Add(-1 * time.Second),
+			LastPrice:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
 			Bids: []*auctiontypes.Bid{
 				{
 					AuctionId: id1,
@@ -136,14 +136,14 @@ func TestProcessExpiredAuctions(t *testing.T) {
 			},
 		},
 		{
-			Id:             id2,
-			Owner:          f.addrs[0].String(),
-			AuctionType:    auctiontypes.RESERVE,
-			EscrowContract: 1,
-			ReservePrice:   sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
-			StartTime:      time.Now().Add(-30 * time.Second),
-			EndTime:        time.Now().Add(-1 * time.Second),
-			Bids:           []*auctiontypes.Bid{},
+			Id:           id2,
+			Status:       auctiontypes.ACTIVE,
+			Owner:        f.addrs[0].String(),
+			AuctionType:  auctiontypes.RESERVE,
+			ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+			StartTime:    time.Now().Add(-30 * time.Second),
+			EndTime:      time.Now().Add(-1 * time.Second),
+			Bids:         []*auctiontypes.Bid{},
 		},
 	}
 

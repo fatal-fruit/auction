@@ -78,7 +78,7 @@ func TestQueryAuction(t *testing.T) {
 
 				require.NotNil(auction)
 				require.EqualValues(queryRes.Auction.AuctionType, auction.AuctionType)
-				require.EqualValues(queryRes.Auction.EscrowContract, auction.EscrowContract)
+				require.EqualValues(queryRes.Auction.Strategy.EscrowContractId, auction.Strategy.GetEscrowContractId())
 				require.EqualValues(queryRes.Auction.Id, auction.Id)
 				require.EqualValues(queryRes.Auction.Owner, auction.Owner)
 				require.EqualValues(queryRes.Auction.ReservePrice, auction.ReservePrice)
