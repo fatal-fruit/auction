@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/fatal-fruit/auction/keeper"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -35,7 +36,12 @@ func TestQueryAuction(t *testing.T) {
 				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
+				contract := &keeper.EscrowModContract{
+					Id:      contractId,
+					Address: f.addrs[2],
+				}
+
+				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep))
 
 				msg := auctiontypes.MsgNewAuction{
@@ -113,7 +119,12 @@ func TestQueryOwnerAuctions(t *testing.T) {
 				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
+				contract := &keeper.EscrowModContract{
+					Id:      contractId,
+					Address: f.addrs[2],
+				}
+
+				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(2)
 
 				msg1 := auctiontypes.MsgNewAuction{

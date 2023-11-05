@@ -37,21 +37,25 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 	}
 
 	// Generate escrow contract
-	contractId, err := ms.k.es.NewContract()
+	contract, err := ms.k.es.NewContract(goCtx, 1)
 	if err != nil {
 		// TODO: Rollback deposit
 		return &auctiontypes.MsgNewAuctionResponse{}, fmt.Errorf("error creating escrow contract for auction")
 	}
-
 	auction := auctiontypes.ReserveAuction{
 		Id:             id,
 		Owner:          owner.String(),
 		AuctionType:    msg.AuctionType,
-		EscrowContract: contractId,
+		EscrowContract: contract.GetId(),
 		ReservePrice:   msg.ReservePrice,
 		StartTime:      start,
 		EndTime:        end,
 		Bids:           []*auctiontypes.Bid{},
+		Strategy: &auctiontypes.SettleStrategy{
+			StrategyType:          auctiontypes.SETTLE,
+			EscrowContractId:      contract.GetId(),
+			EscrowContractAddress: contract.GetAddress().String(),
+		},
 	}
 
 	ms.k.Logger(ctx).Info(auction.String())

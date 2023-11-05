@@ -5,8 +5,11 @@
 package testutil
 
 import (
+	context "context"
 	reflect "reflect"
 
+	types "github.com/cosmos/cosmos-sdk/types"
+	types0 "github.com/fatal-fruit/auction/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -34,16 +37,81 @@ func (m *MockEscrowService) EXPECT() *MockEscrowServiceMockRecorder {
 }
 
 // NewContract mocks base method.
-func (m *MockEscrowService) NewContract() (uint64, error) {
+func (m *MockEscrowService) NewContract(arg0 context.Context, arg1 uint64) (types0.EscrowContract, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewContract")
-	ret0, _ := ret[0].(uint64)
+	ret := m.ctrl.Call(m, "NewContract", arg0, arg1)
+	ret0, _ := ret[0].(types0.EscrowContract)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewContract indicates an expected call of NewContract.
-func (mr *MockEscrowServiceMockRecorder) NewContract() *gomock.Call {
+func (mr *MockEscrowServiceMockRecorder) NewContract(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewContract", reflect.TypeOf((*MockEscrowService)(nil).NewContract))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewContract", reflect.TypeOf((*MockEscrowService)(nil).NewContract), arg0, arg1)
+}
+
+// Release mocks base method.
+func (m *MockEscrowService) Release(arg0 uint64, arg1 types.AccAddress) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Release", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Release indicates an expected call of Release.
+func (mr *MockEscrowServiceMockRecorder) Release(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Release", reflect.TypeOf((*MockEscrowService)(nil).Release), arg0, arg1)
+}
+
+// MockEscrowContract is a mock of EscrowContract interface.
+type MockEscrowContract struct {
+	ctrl     *gomock.Controller
+	recorder *MockEscrowContractMockRecorder
+}
+
+// MockEscrowContractMockRecorder is the mock recorder for MockEscrowContract.
+type MockEscrowContractMockRecorder struct {
+	mock *MockEscrowContract
+}
+
+// NewMockEscrowContract creates a new mock instance.
+func NewMockEscrowContract(ctrl *gomock.Controller) *MockEscrowContract {
+	mock := &MockEscrowContract{ctrl: ctrl}
+	mock.recorder = &MockEscrowContractMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEscrowContract) EXPECT() *MockEscrowContractMockRecorder {
+	return m.recorder
+}
+
+// GetAddress mocks base method.
+func (m *MockEscrowContract) GetAddress() types.AccAddress {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAddress")
+	ret0, _ := ret[0].(types.AccAddress)
+	return ret0
+}
+
+// GetAddress indicates an expected call of GetAddress.
+func (mr *MockEscrowContractMockRecorder) GetAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddress", reflect.TypeOf((*MockEscrowContract)(nil).GetAddress))
+}
+
+// GetId mocks base method.
+func (m *MockEscrowContract) GetId() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetId")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetId indicates an expected call of GetId.
+func (mr *MockEscrowContractMockRecorder) GetId() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetId", reflect.TypeOf((*MockEscrowContract)(nil).GetId))
 }

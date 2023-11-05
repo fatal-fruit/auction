@@ -6,14 +6,16 @@ const (
 	ModuleName = "auction"
 	StoreKey   = "auction"
 	RESERVE    = "RESERVE"
+	SETTLE     = "SETTLE"
 )
 
 var (
-	IDKey                = collections.NewPrefix(0)
-	AuctionsKey          = collections.NewPrefix(1)
-	OwnerAuctionsKey     = collections.NewPrefix(2)
-	ActiveAuctionsKey    = collections.NewPrefix(3)
-	ExpiredAuctionsKey   = collections.NewPrefix(4)
-	CancelledAuctionsKey = collections.NewPrefix(5)
-	PendingAuctionsKey   = collections.NewPrefix(6)
+	IDKey                 = collections.NewPrefix(0)
+	AuctionsKey           = collections.NewPrefix(1)
+	OwnerAuctionsKey      = collections.NewPrefix(2)
+	ActiveAuctionsKey     = collections.NewPrefix(3)
+	ExpiredAuctionsKey    = collections.NewPrefix(4)
+	CancelledAuctionsKey  = collections.NewPrefix(5)
+	PendingAuctionsKey    = collections.NewPrefix(6)
+	ContractAddressPrefix = collections.NewPrefix(7)
 )

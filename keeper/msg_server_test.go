@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/fatal-fruit/auction/keeper"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -35,8 +36,12 @@ func TestNewAuction(t *testing.T) {
 				contractId := uint64(1)
 				defaultModBalance := sdk.NewInt64Coin(sdk.DefaultBondDenom, 100000)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
+				contract := &keeper.EscrowModContract{
+					Id:      contractId,
+					Address: f.addrs[2],
+				}
 
-				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
+				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.mockAcctKeeper.EXPECT().GetAccount(tf.ctx, tf.modAddr).Return(tf.modAccount).AnyTimes()
 				tf.mockAcctKeeper.EXPECT().GetModuleAddress(auctiontypes.ModuleName).Return(tf.modAddr).AnyTimes()
 				tf.mockBankKeeper.EXPECT().GetBalance(tf.ctx, tf.modAddr, tf.k.GetDefaultDenom()).Return(defaultModBalance)
@@ -106,7 +111,11 @@ func TestNewBid(t *testing.T) {
 				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
+				contract := &keeper.EscrowModContract{
+					Id:      contractId,
+					Address: f.addrs[2],
+				}
+				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
 
 				msg1 := auctiontypes.MsgNewAuction{
@@ -138,7 +147,11 @@ func TestNewBid(t *testing.T) {
 				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				tf.mockEscrowService.EXPECT().NewContract().Return(contractId, nil).AnyTimes()
+				contract := &keeper.EscrowModContract{
+					Id:      contractId,
+					Address: f.addrs[2],
+				}
+				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
 
 				msg1 := auctiontypes.MsgNewAuction{
@@ -178,6 +191,11 @@ func TestNewBid(t *testing.T) {
 					StartTime:      time.Now().Add(-30 * time.Second),
 					EndTime:        time.Now().Add(-1 * time.Second),
 					Bids:           []*auctiontypes.Bid{},
+					Strategy: &auctiontypes.SettleStrategy{
+						StrategyType:          auctiontypes.SETTLE,
+						EscrowContractId:      1,
+						EscrowContractAddress: f.addrs[2].String(),
+					},
 				}
 				err = f.k.Auctions.Set(f.ctx, id, auction)
 				require.NoError(err)
@@ -217,6 +235,11 @@ func TestNewBid(t *testing.T) {
 							BidPrice:  sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
 							Timestamp: time.Now(),
 						},
+					},
+					Strategy: &auctiontypes.SettleStrategy{
+						StrategyType:          auctiontypes.SETTLE,
+						EscrowContractId:      1,
+						EscrowContractAddress: f.addrs[2].String(),
 					},
 				}
 				err = f.k.Auctions.Set(f.ctx, id, auction)
