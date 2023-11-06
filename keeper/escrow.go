@@ -12,6 +12,7 @@ import (
 // Escrow Implementation
 type EscrowModule struct {
 	ak types.AccountKeeper
+	bk types.BankKeeper
 }
 
 type EscrowModContract struct {
@@ -19,9 +20,10 @@ type EscrowModContract struct {
 	Address sdk.AccAddress
 }
 
-func NewEscrowModule(ak types.AccountKeeper) types.EscrowService {
+func NewEscrowModule(ak types.AccountKeeper, bk types.BankKeeper) types.EscrowService {
 	return &EscrowModule{
 		ak: ak,
+		bk: bk,
 	}
 }
 
@@ -58,12 +60,17 @@ func (em *EscrowModule) NewContract(ctx context.Context, id uint64) (types.Escro
 	}, nil
 }
 
-func (em *EscrowModule) Release(id uint64, address sdk.AccAddress) error {
-	fmt.Println("hello")
-	fmt.Println(id)
-	fmt.Println(address)
+func (em *EscrowModule) Release(ctx context.Context, id uint64, sender sdk.AccAddress, recipient sdk.AccAddress) error {
+	//TODO: Refactor to get contract address
 
-	// TODO: Implement
+	//TODO: Extend for all balances
+	balance := em.bk.GetBalance(ctx, sender, sdk.DefaultBondDenom)
+
+	err := em.bk.SendCoins(ctx, sender, recipient, sdk.Coins{balance})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

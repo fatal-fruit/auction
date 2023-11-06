@@ -8,16 +8,32 @@ import (
 )
 
 type Strategy interface {
-	ExecuteStrategy(auctiontypes.EscrowService) error
+	ExecuteStrategy(context.Context, auctiontypes.ReserveAuction, auctiontypes.EscrowService, auctiontypes.BankKeeper) error
 }
 
 type SettleStrategy struct {
 	*auctiontypes.SettleStrategy
 }
 
-func (s *SettleStrategy) ExecuteStrategy(es auctiontypes.EscrowService) error {
-	addr := sdk.MustAccAddressFromBech32(s.EscrowContractAddress)
-	err := es.Release(s.EscrowContractId, addr)
+func (s *SettleStrategy) ExecuteStrategy(ctx context.Context, auction auctiontypes.ReserveAuction, es auctiontypes.EscrowService, bk auctiontypes.BankKeeper) error {
+	// Select Winner
+	winningBid, err := GetWinner(auction)
+	if err != nil {
+		return err
+	}
+
+	bidder := sdk.MustAccAddressFromBech32(winningBid.Bidder)
+	auctioneer := sdk.MustAccAddressFromBech32(auction.Owner)
+
+	// Send bid amount to auction owner
+	err = bk.SendCoins(ctx, bidder, auctioneer, sdk.Coins{winningBid.BidPrice})
+	if err != nil {
+		return err
+	}
+
+	// Release escrowed auction bounty
+	escrowAddr := sdk.MustAccAddressFromBech32(s.EscrowContractAddress)
+	err = es.Release(ctx, s.EscrowContractId, escrowAddr, bidder)
 	if err != nil {
 		return err
 	}

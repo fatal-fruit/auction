@@ -7,7 +7,7 @@ import (
 
 type EscrowService interface {
 	NewContract(context.Context, uint64) (EscrowContract, error)
-	Release(uint64, sdk.AccAddress) error
+	Release(context.Context, uint64, sdk.AccAddress, sdk.AccAddress) error
 }
 
 type EscrowContract interface {

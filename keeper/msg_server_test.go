@@ -331,7 +331,8 @@ func TestExecAuction(t *testing.T) {
 				require.NoError(err)
 				err = f.k.PendingAuctions.Set(f.ctx, id)
 				require.NoError(err)
-				f.mockEscrowService.EXPECT().Release(uint64(1), f.addrs[2]).Times(1)
+				f.mockBankKeeper.EXPECT().SendCoins(f.ctx, f.addrs[1], f.addrs[0], sdk.Coins{sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100)}).Times(1)
+				f.mockEscrowService.EXPECT().Release(f.ctx, uint64(1), f.addrs[2], f.addrs[1]).Times(1)
 
 				return struct {
 					auctionId uint64
@@ -359,6 +360,8 @@ func TestExecAuction(t *testing.T) {
 				isPending, err := f.k.PendingAuctions.Has(f.ctx, msgRes.auctionId)
 				require.NoError(err)
 				require.False(isPending)
+
+				//expect bank send coins called two more times
 
 				auction, err := f.k.Auctions.Get(f.ctx, msgRes.auctionId)
 				require.Equal(auction.Status, auctiontypes.CLOSED)

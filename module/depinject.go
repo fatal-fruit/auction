@@ -57,7 +57,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	}
 
 	// TODO: Remove with implementation
-	es := keeper.NewEscrowModule(in.AccountKeeper)
+	es := keeper.NewEscrowModule(in.AccountKeeper, in.BankKeeper)
 
 	k := keeper.NewKeeper(in.Cdc, in.AddressCodec, in.StoreService, authority.String(), in.AccountKeeper, in.BankKeeper, es, in.Config.DefaultDenom)
 	m := NewAppModule(in.Cdc, k)

@@ -156,7 +156,7 @@ func (ms msgServer) Exec(goCtx context.Context, msg *auctiontypes.MsgExecAuction
 
 	// execute strategy
 	exeuctionStrat := SettleStrategy{auction.Strategy}
-	err = exeuctionStrat.ExecuteStrategy(ms.k.es)
+	err = exeuctionStrat.ExecuteStrategy(goCtx, auction, ms.k.es, ms.k.bk)
 	//auction.Strategy
 
 	// remove from pending

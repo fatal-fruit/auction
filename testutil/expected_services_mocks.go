@@ -52,17 +52,17 @@ func (mr *MockEscrowServiceMockRecorder) NewContract(arg0, arg1 interface{}) *go
 }
 
 // Release mocks base method.
-func (m *MockEscrowService) Release(arg0 uint64, arg1 types.AccAddress) error {
+func (m *MockEscrowService) Release(arg0 context.Context, arg1 uint64, arg2, arg3 types.AccAddress) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Release", arg0, arg1)
+	ret := m.ctrl.Call(m, "Release", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Release indicates an expected call of Release.
-func (mr *MockEscrowServiceMockRecorder) Release(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockEscrowServiceMockRecorder) Release(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Release", reflect.TypeOf((*MockEscrowService)(nil).Release), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Release", reflect.TypeOf((*MockEscrowService)(nil).Release), arg0, arg1, arg2, arg3)
 }
 
 // MockEscrowContract is a mock of EscrowContract interface.
