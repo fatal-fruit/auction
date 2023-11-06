@@ -3,6 +3,7 @@ package keeper_test
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/fatal-fruit/auction/keeper"
+	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -10,27 +11,27 @@ import (
 )
 
 func TestNewAuction(t *testing.T) {
-	f := initFixture(t)
+	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
 	testCases := []struct {
 		name      string
 		req       auctiontypes.MsgNewAuction
 		expErr    bool
-		setupTest func(fixture *testFixture) struct {
+		setupTest func(fixture *auctiontestutil.TestFixture) struct {
 			contractId uint64
 		}
 	}{
 		{
 			name: "valid auction",
 			req: auctiontypes.MsgNewAuction{
-				Owner:        f.addrs[0].String(),
-				Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000)),
-				ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+				Owner:        f.Addrs[0].String(),
+				Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000)),
+				ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 				Duration:     time.Duration(30) * time.Second,
 				AuctionType:  auctiontypes.RESERVE,
 			},
-			setupTest: func(tf *testFixture) struct {
+			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
 				contractId := uint64(1)
@@ -38,15 +39,15 @@ func TestNewAuction(t *testing.T) {
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 				contract := &keeper.EscrowModContract{
 					Id:      contractId,
-					Address: f.addrs[2],
+					Address: f.Addrs[2],
 				}
 
-				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
-				tf.mockAcctKeeper.EXPECT().GetAccount(tf.ctx, tf.modAddr).Return(tf.modAccount).AnyTimes()
-				tf.mockAcctKeeper.EXPECT().GetModuleAddress(auctiontypes.ModuleName).Return(tf.modAddr).AnyTimes()
-				tf.mockBankKeeper.EXPECT().GetBalance(tf.ctx, tf.modAddr, tf.k.GetDefaultDenom()).Return(defaultModBalance)
-				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep))
-				tf.mockBankKeeper.EXPECT().GetBalance(tf.ctx, tf.modAddr, tf.k.GetDefaultDenom()).Return(defaultModBalance.Add(defaultDep))
+				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
+				tf.MockAcctKeeper.EXPECT().GetAccount(tf.Ctx, tf.ModAddr).Return(tf.ModAccount).AnyTimes()
+				tf.MockAcctKeeper.EXPECT().GetModuleAddress(auctiontypes.ModuleName).Return(tf.ModAddr).AnyTimes()
+				tf.MockBankKeeper.EXPECT().GetBalance(tf.Ctx, tf.ModAddr, tf.K.GetDefaultDenom()).Return(defaultModBalance)
+				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep))
+				tf.MockBankKeeper.EXPECT().GetBalance(tf.Ctx, tf.ModAddr, tf.K.GetDefaultDenom()).Return(defaultModBalance.Add(defaultDep))
 				return struct {
 					contractId uint64
 				}{
@@ -60,21 +61,21 @@ func TestNewAuction(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			expValues := tc.setupTest(f)
-			modAcctBalance := f.k.GetModuleBalance(f.ctx, f.k.GetDefaultDenom())
-			found, deposit := tc.req.Deposit.Find(f.k.GetDefaultDenom())
+			modAcctBalance := f.K.GetModuleBalance(f.Ctx, f.K.GetDefaultDenom())
+			found, deposit := tc.req.Deposit.Find(f.K.GetDefaultDenom())
 			require.True(found)
-			res, err := f.msgServer.NewAuction(f.ctx, &tc.req)
+			res, err := f.MsgServer.NewAuction(f.Ctx, &tc.req)
 			if tc.expErr {
 				require.Error(err)
 			} else {
 				require.NoError(err)
-				auction, err := f.k.Auctions.Get(f.ctx, res.GetId())
+				auction, err := f.K.Auctions.Get(f.Ctx, res.GetId())
 				require.NoError(err)
-				isActive, err := f.k.ActiveAuctions.Has(f.ctx, res.GetId())
+				isActive, err := f.K.ActiveAuctions.Has(f.Ctx, res.GetId())
 				require.NoError(err)
 				require.True(isActive)
 
-				newModAcctBalance := f.k.GetModuleBalance(f.ctx, f.k.GetDefaultDenom())
+				newModAcctBalance := f.K.GetModuleBalance(f.Ctx, f.K.GetDefaultDenom())
 				require.NotNil(auction)
 				require.Equal(tc.req.Duration, auction.EndTime.Sub(auction.StartTime))
 				require.Equal(tc.req.ReservePrice, auction.ReservePrice)
@@ -88,7 +89,7 @@ func TestNewAuction(t *testing.T) {
 }
 
 func TestNewBid(t *testing.T) {
-	f := initFixture(t)
+	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
 	testCases := []struct {
@@ -96,16 +97,16 @@ func TestNewBid(t *testing.T) {
 		owner     sdk.AccAddress
 		bid       sdk.Coin
 		expErr    bool
-		setupTest func(fixture *testFixture) struct {
+		setupTest func(fixture *auctiontestutil.TestFixture) struct {
 			contractId uint64
 		}
 	}{
 		{
 			name:   "valid bid",
-			owner:  f.addrs[1],
-			bid:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+			owner:  f.Addrs[1],
+			bid:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
 			expErr: false,
-			setupTest: func(tf *testFixture) struct {
+			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
 				contractId := uint64(1)
@@ -113,20 +114,20 @@ func TestNewBid(t *testing.T) {
 
 				contract := &keeper.EscrowModContract{
 					Id:      contractId,
-					Address: f.addrs[2],
+					Address: f.Addrs[2],
 				}
-				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
-				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
+				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
+				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
 
 				msg1 := auctiontypes.MsgNewAuction{
-					Owner:        f.addrs[0].String(),
-					Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000)),
-					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					Owner:        f.Addrs[0].String(),
+					Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000)),
+					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					Duration:     time.Duration(30) * time.Second,
 					AuctionType:  auctiontypes.RESERVE,
 				}
 
-				auctionRes, err := f.msgServer.NewAuction(f.ctx, &msg1)
+				auctionRes, err := f.MsgServer.NewAuction(f.Ctx, &msg1)
 				require.NoError(err)
 
 				return struct {
@@ -138,10 +139,10 @@ func TestNewBid(t *testing.T) {
 		},
 		{
 			name:   "invalid bid price",
-			owner:  f.addrs[1],
-			bid:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 900),
+			owner:  f.Addrs[1],
+			bid:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 900),
 			expErr: true,
-			setupTest: func(tf *testFixture) struct {
+			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
 				contractId := uint64(1)
@@ -149,20 +150,20 @@ func TestNewBid(t *testing.T) {
 
 				contract := &keeper.EscrowModContract{
 					Id:      contractId,
-					Address: f.addrs[2],
+					Address: f.Addrs[2],
 				}
-				tf.mockEscrowService.EXPECT().NewContract(tf.ctx, contractId).Return(contract, nil).AnyTimes()
-				tf.mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.ctx, tf.addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
+				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
+				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
 
 				msg1 := auctiontypes.MsgNewAuction{
-					Owner:        f.addrs[0].String(),
-					Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000)),
-					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					Owner:        f.Addrs[0].String(),
+					Deposit:      sdk.NewCoins(sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000)),
+					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					Duration:     time.Duration(30) * time.Second,
 					AuctionType:  auctiontypes.RESERVE,
 				}
 
-				auctionRes, err := f.msgServer.NewAuction(f.ctx, &msg1)
+				auctionRes, err := f.MsgServer.NewAuction(f.Ctx, &msg1)
 				require.NoError(err)
 
 				return struct {
@@ -174,32 +175,32 @@ func TestNewBid(t *testing.T) {
 		},
 		{
 			name:   "bid for expired auction",
-			owner:  f.addrs[1],
-			bid:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+			owner:  f.Addrs[1],
+			bid:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
 			expErr: true,
-			setupTest: func(tf *testFixture) struct {
+			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
-				id, err := f.k.IDs.Next(f.ctx)
+				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
 				auction := auctiontypes.ReserveAuction{
 					Id:           id,
 					Status:       auctiontypes.ACTIVE,
-					Owner:        f.addrs[0].String(),
+					Owner:        f.Addrs[0].String(),
 					AuctionType:  auctiontypes.RESERVE,
-					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					StartTime:    time.Now().Add(-30 * time.Second),
 					EndTime:      time.Now().Add(-1 * time.Second),
 					Bids:         []*auctiontypes.Bid{},
 					Strategy: &auctiontypes.SettleStrategy{
 						StrategyType:          auctiontypes.SETTLE,
 						EscrowContractId:      1,
-						EscrowContractAddress: f.addrs[2].String(),
+						EscrowContractAddress: f.Addrs[2].String(),
 					},
 				}
-				err = f.k.Auctions.Set(f.ctx, id, auction)
+				err = f.K.Auctions.Set(f.Ctx, id, auction)
 				require.NoError(err)
-				err = f.k.ActiveAuctions.Set(f.ctx, id)
+				err = f.K.ActiveAuctions.Set(f.Ctx, id)
 				require.NoError(err)
 
 				return struct {
@@ -211,40 +212,40 @@ func TestNewBid(t *testing.T) {
 		},
 		{
 			name:   "bid lower than competitive bid",
-			owner:  f.addrs[2],
-			bid:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+			owner:  f.Addrs[2],
+			bid:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 			expErr: true,
-			setupTest: func(tf *testFixture) struct {
+			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
-				id, err := f.k.IDs.Next(f.ctx)
+				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
 				auction := auctiontypes.ReserveAuction{
 					Id:           id,
 					Status:       auctiontypes.ACTIVE,
-					Owner:        f.addrs[0].String(),
+					Owner:        f.Addrs[0].String(),
 					AuctionType:  auctiontypes.RESERVE,
-					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					StartTime:    time.Now(),
 					EndTime:      time.Now().Add(30 * time.Second),
-					LastPrice:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+					LastPrice:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
 					Bids: []*auctiontypes.Bid{
 						{
 							AuctionId: id,
-							Bidder:    f.addrs[1].String(),
-							BidPrice:  sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+							Bidder:    f.Addrs[1].String(),
+							BidPrice:  sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
 							Timestamp: time.Now(),
 						},
 					},
 					Strategy: &auctiontypes.SettleStrategy{
 						StrategyType:          auctiontypes.SETTLE,
 						EscrowContractId:      1,
-						EscrowContractAddress: f.addrs[2].String(),
+						EscrowContractAddress: f.Addrs[2].String(),
 					},
 				}
-				err = f.k.Auctions.Set(f.ctx, id, auction)
+				err = f.K.Auctions.Set(f.Ctx, id, auction)
 				require.NoError(err)
-				err = f.k.ActiveAuctions.Set(f.ctx, id)
+				err = f.K.ActiveAuctions.Set(f.Ctx, id)
 				require.NoError(err)
 
 				return struct {
@@ -264,12 +265,12 @@ func TestNewBid(t *testing.T) {
 				Owner:     tc.owner.String(),
 				Bid:       tc.bid,
 			}
-			_, err := f.msgServer.NewBid(f.ctx, &bid)
+			_, err := f.MsgServer.NewBid(f.Ctx, &bid)
 
 			if tc.expErr {
 				require.Error(err)
 			} else {
-				auction, err := f.k.Auctions.Get(f.ctx, msgRes.contractId)
+				auction, err := f.K.Auctions.Get(f.Ctx, msgRes.contractId)
 				require.NoError(err)
 				bd := auction.GetBids()[0]
 				require.Equal(bd.BidPrice, tc.bid)
@@ -282,57 +283,57 @@ func TestNewBid(t *testing.T) {
 }
 
 func TestExecAuction(t *testing.T) {
-	f := initFixture(t)
+	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
 	testCases := []struct {
 		name      string
 		req       auctiontypes.MsgExecAuction
 		expErr    bool
-		setupTest func(fixture *testFixture) struct {
+		setupTest func(fixture *auctiontestutil.TestFixture) struct {
 			auctionId uint64
 		}
 	}{
 		{
 			name: "execute pending auction",
 			req: auctiontypes.MsgExecAuction{
-				Sender: f.addrs[0].String(),
+				Sender: f.Addrs[0].String(),
 			},
-			setupTest: func(tf *testFixture) struct {
+			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				auctionId uint64
 			} {
-				id, err := f.k.IDs.Next(f.ctx)
+				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
 				auction := auctiontypes.ReserveAuction{
 					Id:           id,
 					Status:       auctiontypes.ACTIVE,
-					Owner:        f.addrs[0].String(),
+					Owner:        f.Addrs[0].String(),
 					AuctionType:  auctiontypes.RESERVE,
-					ReservePrice: sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1000),
+					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					StartTime:    time.Now().Add(-30 * time.Second),
 					EndTime:      time.Now().Add(-1 * time.Second),
-					LastPrice:    sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+					LastPrice:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
 					Bids: []*auctiontypes.Bid{
 						{
 							AuctionId: id,
-							Bidder:    f.addrs[1].String(),
-							BidPrice:  sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100),
+							Bidder:    f.Addrs[1].String(),
+							BidPrice:  sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
 							Timestamp: time.Now(),
 						},
 					},
 					Strategy: &auctiontypes.SettleStrategy{
 						StrategyType:          auctiontypes.SETTLE,
 						EscrowContractId:      uint64(1),
-						EscrowContractAddress: f.addrs[2].String(),
+						EscrowContractAddress: f.Addrs[2].String(),
 					},
 				}
-				err = f.k.Auctions.Set(f.ctx, id, auction)
+				err = f.K.Auctions.Set(f.Ctx, id, auction)
 
 				require.NoError(err)
-				err = f.k.PendingAuctions.Set(f.ctx, id)
+				err = f.K.PendingAuctions.Set(f.Ctx, id)
 				require.NoError(err)
-				f.mockBankKeeper.EXPECT().SendCoins(f.ctx, f.addrs[1], f.addrs[0], sdk.Coins{sdk.NewInt64Coin(f.k.GetDefaultDenom(), 1100)}).Times(1)
-				f.mockEscrowService.EXPECT().Release(f.ctx, uint64(1), f.addrs[2], f.addrs[1]).Times(1)
+				f.MockBankKeeper.EXPECT().SendCoins(f.Ctx, f.Addrs[1], f.Addrs[0], sdk.Coins{sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100)}).Times(1)
+				f.MockEscrowService.EXPECT().Release(f.Ctx, uint64(1), f.Addrs[2], f.Addrs[1]).Times(1)
 
 				return struct {
 					auctionId uint64
@@ -349,7 +350,7 @@ func TestExecAuction(t *testing.T) {
 			msgRes := tc.setupTest(f)
 			tc.req.AuctionId = msgRes.auctionId
 
-			_, err := f.msgServer.Exec(f.ctx, &tc.req)
+			_, err := f.MsgServer.Exec(f.Ctx, &tc.req)
 
 			if tc.expErr {
 				require.Error(err)
@@ -357,13 +358,13 @@ func TestExecAuction(t *testing.T) {
 				// set status to executed
 				// remove from pending
 				// expect escrow service release to have been called
-				isPending, err := f.k.PendingAuctions.Has(f.ctx, msgRes.auctionId)
+				isPending, err := f.K.PendingAuctions.Has(f.Ctx, msgRes.auctionId)
 				require.NoError(err)
 				require.False(isPending)
 
 				//expect bank send coins called two more times
 
-				auction, err := f.k.Auctions.Get(f.ctx, msgRes.auctionId)
+				auction, err := f.K.Auctions.Get(f.Ctx, msgRes.auctionId)
 				require.Equal(auction.Status, auctiontypes.CLOSED)
 				require.NoError(err)
 

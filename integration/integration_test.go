@@ -63,4 +63,8 @@ func TestIntegration(t *testing.T) {
 	app, err := simtestutil.Setup(appConfig, &kp)
 	require.NoError(t, err)
 	require.NotNil(t, app)
+	ctx := app.BaseApp.NewContext(false)
+	_, err = app.EndBlocker(ctx)
+	require.NoError(t, err)
+
 }

@@ -6,5 +6,6 @@ import (
 )
 
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
+	k.ProcessActiveAuctions(ctx)
 	return nil
 }
