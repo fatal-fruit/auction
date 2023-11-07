@@ -99,7 +99,7 @@ func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/"+auctiontypes.ModuleName)
 }
 
-func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) {
+func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	var expired []uint64
 	err := k.ActiveAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
@@ -113,21 +113,22 @@ func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) {
 		return false, nil
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	for _, exp := range expired {
 		err = k.ActiveAuctions.Remove(goCtx, exp)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		err = k.ExpiredAuctions.Set(goCtx, exp)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
+	return nil
 }
 
-func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) {
+func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	var pending []uint64
 	var cancelled []uint64
@@ -144,28 +145,29 @@ func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) {
 		return false, nil
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	// If no bids -> cancelled
 	for _, c := range cancelled {
 		err = k.ExpiredAuctions.Remove(goCtx, c)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		err = k.CancelledAuctions.Set(goCtx, c)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 	// If at least 1 bid -> pending
 	for _, p := range pending {
 		err = k.ExpiredAuctions.Remove(goCtx, p)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		err = k.PendingAuctions.Set(goCtx, p)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
+	return nil
 }

@@ -30,7 +30,8 @@ func TestProcessActiveAuctions(t *testing.T) {
 	err = f.K.ActiveAuctions.Set(f.Ctx, id)
 	require.NoError(err)
 
-	f.K.ProcessActiveAuctions(f.Ctx)
+	err = f.K.ProcessActiveAuctions(f.Ctx)
+	require.NoError(err)
 	isActive, err := f.K.ActiveAuctions.Has(f.Ctx, id)
 	require.False(isActive)
 	require.NoError(err)

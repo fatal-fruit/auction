@@ -16,6 +16,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	auctioncli "github.com/fatal-fruit/auction/client"
 	"github.com/fatal-fruit/auction/keeper"
 )
 
@@ -108,6 +109,10 @@ func (AppModule) GetTxCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand()
+	cmd.AddCommand(
+		auctioncli.NewAuctionCmd(),
+		auctioncli.BidCmd(),
+		auctioncli.ExecuteAuctionCmd(),
+	)
 	return cmd
 }

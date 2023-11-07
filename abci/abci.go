@@ -6,6 +6,14 @@ import (
 )
 
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
-	k.ProcessActiveAuctions(ctx)
+	err := k.ProcessActiveAuctions(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = k.ProcessExpiredAuctions(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
