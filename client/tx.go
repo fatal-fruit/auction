@@ -18,7 +18,7 @@ import (
 func NewAuctionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-auction [reserve-price] [duration] [deposit] --from [sender]",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(3),
 		Short: "create new auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
 			$ %s tx %s create-contract <reserve-price> <duration> <deposit> --from <sender> --chain-id <chain-id>`, version.AppName, auctiontypes.ModuleName),
