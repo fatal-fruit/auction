@@ -15,6 +15,7 @@ import (
 type Keeper struct {
 	cdc          codec.BinaryCodec
 	addressCodec address.Codec
+	logger       log.Logger
 
 	authority string
 
@@ -36,7 +37,7 @@ type Keeper struct {
 	CancelledAuctions collections.KeySet[uint64]
 }
 
-func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, es auctiontypes.EscrowService, denom string) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, es auctiontypes.EscrowService, denom string, logger log.Logger) Keeper {
 	if _, err := addressCodec.StringToBytes(authority); err != nil {
 		panic(fmt.Errorf("invalid authority address: %w", err))
 	}
@@ -58,6 +59,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 		bk:           bk,
 		es:           es,
 		defaultDenom: denom,
+		logger:       logger,
 	}
 
 	schema, err := sb.Build()
@@ -95,13 +97,17 @@ func (k *Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
 }
 
 // Logger returns a module-specific logger.
-func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", "x/"+auctiontypes.ModuleName)
+func (keeper Keeper) Logger() log.Logger {
+	return keeper.logger.With("module", "x/"+auctiontypes.ModuleName)
 }
 
 func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := ctx.Logger()
 	var expired []uint64
+
+	var numActive int
+	logger.Info("Processing-Active :: Checking for active auctions")
 	err := k.ActiveAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
 		auction, err := k.Auctions.Get(ctx, auctionId)
 		if err != nil {
@@ -110,26 +116,35 @@ func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 		if auction.EndTime.Before(ctx.BlockTime()) {
 			expired = append(expired, auctionId)
 		}
+		numActive++
 		return false, nil
 	})
 	if err != nil {
 		return err
 	}
+	logger.Info(fmt.Sprintf("Processing-Active :: Number of active auctions: %d", numActive))
 	for _, exp := range expired {
 		err = k.ActiveAuctions.Remove(goCtx, exp)
 		if err != nil {
 			return err
 		}
+		logger.Info(fmt.Sprintf("Processing-Active :: Removed Auction ID: %d", exp))
+
 		err = k.ExpiredAuctions.Set(goCtx, exp)
 		if err != nil {
 			return err
 		}
+		logger.Info(fmt.Sprintf("Processing-Active :: Pushed to Expired: %d", exp))
 	}
 	return nil
 }
 
 func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := ctx.Logger()
+	logger.Info("Processing-Expired :: Checking for expired auctions")
+	var numExpired int
+
 	var pending []uint64
 	var cancelled []uint64
 	err := k.ExpiredAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
@@ -142,32 +157,68 @@ func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 		} else {
 			cancelled = append(cancelled, auctionId)
 		}
+		numExpired++
 		return false, nil
 	})
 	if err != nil {
 		return err
 	}
+	logger.Info(fmt.Sprintf("Processing-Expired :: Number of expired auctions: %d", numExpired))
+
 	// If no bids -> cancelled
+	logger.Info("Processing-Expired :: Checking for cancelled auctions")
 	for _, c := range cancelled {
 		err = k.ExpiredAuctions.Remove(goCtx, c)
 		if err != nil {
 			return err
 		}
+		logger.Info(fmt.Sprintf("Processing-Expired :: Removed Auction ID without bids from expired: %d", c))
+
 		err = k.CancelledAuctions.Set(goCtx, c)
 		if err != nil {
 			return err
 		}
+		logger.Info(fmt.Sprintf("Processing-Expired :: Pushed Auction ID without bids to cancelled: %d", c))
+
 	}
 	// If at least 1 bid -> pending
+	logger.Info("Processing-Expired :: Checking for pending auctions")
 	for _, p := range pending {
 		err = k.ExpiredAuctions.Remove(goCtx, p)
 		if err != nil {
 			return err
 		}
+		logger.Info(fmt.Sprintf("Processing-Expired :: Removed Auction ID with bids from expired: %d", p))
+
 		err = k.PendingAuctions.Set(goCtx, p)
 		if err != nil {
 			return err
 		}
+		logger.Info(fmt.Sprintf("Processing-Expired :: Pushed Auction ID with bids to pending: %d", p))
+
 	}
+	return nil
+}
+
+func (k *Keeper) GetPending(goCtx context.Context) error {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := ctx.Logger()
+	logger.Info("Processing-Pending :: Checking for pending auctions")
+	var numPending int
+
+	var pending []uint64
+	err := k.PendingAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
+		if err != nil {
+			return true, err
+		}
+		pending = append(pending, auctionId)
+		numPending++
+		return false, nil
+	})
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Processing-Pending :: Number of pending auctions: %d", numPending))
+	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %w", pending))
 	return nil
 }

@@ -1,6 +1,7 @@
 package abci
 
 import (
+	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
@@ -35,7 +36,8 @@ func TestEndBlocker_ActiveToCancelled(t *testing.T) {
 	err = f.K.ActiveAuctions.Set(f.Ctx, id)
 	require.NoError(err)
 
-	err = EndBlocker(f.Ctx, f.K)
+	logger := log.NewNopLogger()
+	err = EndBlocker(f.Ctx, f.K, logger)
 	require.NoError(err)
 
 	inActive, err := f.K.ActiveAuctions.Has(f.Ctx, id)
@@ -89,7 +91,8 @@ func TestEndBlocker_ActiveToPending(t *testing.T) {
 	err = f.K.ActiveAuctions.Set(f.Ctx, id)
 	require.NoError(err)
 
-	err = EndBlocker(f.Ctx, f.K)
+	logger := log.NewNopLogger()
+	err = EndBlocker(f.Ctx, f.K, logger)
 	require.NoError(err)
 
 	inActive, err := f.K.ActiveAuctions.Has(f.Ctx, id)

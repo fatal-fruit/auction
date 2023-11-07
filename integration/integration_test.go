@@ -56,6 +56,10 @@ func TestIntegration(t *testing.T) {
 				"consensus",
 				auctiontypes.ModuleName,
 			),
+			configurator.WithCustomEndBlockersOrder(
+				"staking",
+				auctiontypes.ModuleName,
+			),
 		),
 		depinject.Supply(logger),
 	)
@@ -66,5 +70,4 @@ func TestIntegration(t *testing.T) {
 	ctx := app.BaseApp.NewContext(false)
 	_, err = app.EndBlocker(ctx)
 	require.NoError(t, err)
-
 }

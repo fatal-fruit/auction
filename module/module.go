@@ -2,6 +2,7 @@ package module
 
 import (
 	"context"
+	"cosmossdk.io/core/appmodule"
 	"encoding/json"
 	"fmt"
 	auctiontypes "github.com/fatal-fruit/auction/types"
@@ -16,11 +17,21 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	auctionabci "github.com/fatal-fruit/auction/abci"
 	auctioncli "github.com/fatal-fruit/auction/client"
 	"github.com/fatal-fruit/auction/keeper"
 )
 
 const ConsensusVersion = 1
+
+var (
+	_ module.AppModuleBasic = AppModule{}
+	//_ module.HasGenesis     = AppModule{}
+	_ module.HasServices = AppModule{}
+
+	_ appmodule.AppModule     = AppModule{}
+	_ appmodule.HasEndBlocker = AppModule{}
+)
 
 type AppModule struct {
 	cdc    codec.Codec
@@ -55,6 +66,11 @@ func (AppModule) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 }
 
 func (AppModule) ConsensusVersion() uint64 { return ConsensusVersion }
+
+func (am AppModule) EndBlock(ctx context.Context) error {
+	auctionabci.EndBlocker(ctx, am.keeper, am.keeper.Logger())
+	return nil
+}
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	auctiontypes.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))

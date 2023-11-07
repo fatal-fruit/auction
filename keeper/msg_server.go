@@ -53,7 +53,7 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *auctiontypes.MsgNewAu
 		Strategy:     strategy.ToProto(),
 	}
 
-	ms.k.Logger(ctx).Info(auction.String())
+	ms.k.Logger().Info(auction.String())
 	err = ms.k.Auctions.Set(goCtx, id, auction)
 	if err != nil {
 		// TODO: Rollback deposit
