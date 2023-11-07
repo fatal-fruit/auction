@@ -29,7 +29,7 @@ func NewAuctionCmd() *cobra.Command {
 				return err
 			}
 
-			if args[0] == "" || args[1] == "" || args[2] == "" || args[3] == "" {
+			if args[0] == "" || args[1] == "" || args[2] == "" {
 				return fmt.Errorf("reserve-price, deposit, and duration cannot be empty")
 			}
 
