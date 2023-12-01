@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_NewAuction_FullMethodName = "/fatal_fruit.auction.v1.Msg/NewAuction"
-	Msg_NewBid_FullMethodName     = "/fatal_fruit.auction.v1.Msg/NewBid"
-	Msg_Exec_FullMethodName       = "/fatal_fruit.auction.v1.Msg/Exec"
+	Msg_NewAuction_FullMethodName   = "/fatal_fruit.auction.v1.Msg/NewAuction"
+	Msg_StartAuction_FullMethodName = "/fatal_fruit.auction.v1.Msg/StartAuction"
+	Msg_NewBid_FullMethodName       = "/fatal_fruit.auction.v1.Msg/NewBid"
+	Msg_Exec_FullMethodName         = "/fatal_fruit.auction.v1.Msg/Exec"
 )
 
 // MsgClient is the client API for Msg service.
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
 	NewAuction(ctx context.Context, in *MsgNewAuction, opts ...grpc.CallOption) (*MsgNewAuctionResponse, error)
+	StartAuction(ctx context.Context, in *MsgStartAuction, opts ...grpc.CallOption) (*MsgStartAuctionResponse, error)
 	NewBid(ctx context.Context, in *MsgNewBid, opts ...grpc.CallOption) (*MsgNewBidResponse, error)
 	Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.CallOption) (*MsgExecAuctionResponse, error)
 }
@@ -44,6 +46,15 @@ func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 func (c *msgClient) NewAuction(ctx context.Context, in *MsgNewAuction, opts ...grpc.CallOption) (*MsgNewAuctionResponse, error) {
 	out := new(MsgNewAuctionResponse)
 	err := c.cc.Invoke(ctx, Msg_NewAuction_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) StartAuction(ctx context.Context, in *MsgStartAuction, opts ...grpc.CallOption) (*MsgStartAuctionResponse, error) {
+	out := new(MsgStartAuctionResponse)
+	err := c.cc.Invoke(ctx, Msg_StartAuction_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +84,7 @@ func (c *msgClient) Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.C
 // for forward compatibility
 type MsgServer interface {
 	NewAuction(context.Context, *MsgNewAuction) (*MsgNewAuctionResponse, error)
+	StartAuction(context.Context, *MsgStartAuction) (*MsgStartAuctionResponse, error)
 	NewBid(context.Context, *MsgNewBid) (*MsgNewBidResponse, error)
 	Exec(context.Context, *MsgExecAuction) (*MsgExecAuctionResponse, error)
 	mustEmbedUnimplementedMsgServer()
@@ -84,6 +96,9 @@ type UnimplementedMsgServer struct {
 
 func (UnimplementedMsgServer) NewAuction(context.Context, *MsgNewAuction) (*MsgNewAuctionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewAuction not implemented")
+}
+func (UnimplementedMsgServer) StartAuction(context.Context, *MsgStartAuction) (*MsgStartAuctionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartAuction not implemented")
 }
 func (UnimplementedMsgServer) NewBid(context.Context, *MsgNewBid) (*MsgNewBidResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewBid not implemented")
@@ -118,6 +133,24 @@ func _Msg_NewAuction_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).NewAuction(ctx, req.(*MsgNewAuction))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_StartAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgStartAuction)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).StartAuction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_StartAuction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).StartAuction(ctx, req.(*MsgStartAuction))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -168,6 +201,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewAuction",
 			Handler:    _Msg_NewAuction_Handler,
+		},
+		{
+			MethodName: "StartAuction",
+			Handler:    _Msg_StartAuction_Handler,
 		},
 		{
 			MethodName: "NewBid",
