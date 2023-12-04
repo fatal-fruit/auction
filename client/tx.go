@@ -2,6 +2,10 @@ package client
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -9,9 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // NewContractCmd creates a CLI command for MsgNewContract.
@@ -32,11 +33,10 @@ func NewAuctionCmd() *cobra.Command {
 			if args[0] == "" || args[1] == "" || args[2] == "" {
 				return fmt.Errorf("reserve-price, deposit, and duration cannot be empty")
 			}
-
-			fmt.Println(fmt.Sprintf("Reserve Price :: %s", args[0]))
-			fmt.Println(fmt.Sprintf("Duration :: %w", args[1]))
-			fmt.Println(fmt.Sprintf("Deposit :: %w", args[2]))
-			fmt.Println(fmt.Sprintf("Owner :: %w", clientCtx.GetFromAddress().String()))
+			fmt.Printf("Reserve Price :: %s", args[0])
+			fmt.Printf("Duration :: %s", args[1])
+			fmt.Printf("Deposit :: %s", args[2])
+			fmt.Printf("Owner :: %s", clientCtx.GetFromAddress().String())
 
 			// Parse Reserve Price
 			rp, err := sdk.ParseCoinsNormalized(args[0])

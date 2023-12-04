@@ -2,11 +2,12 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
@@ -219,6 +220,6 @@ func (k *Keeper) GetPending(goCtx context.Context) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Processing-Pending :: Number of pending auctions: %d", numPending))
-	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %w", pending))
+	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %v", pending))
 	return nil
 }
