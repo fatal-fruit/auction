@@ -3,24 +3,36 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/fatal-fruit/auction/keeper"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNewContract(t *testing.T) {
 	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
-	id, err := f.K.IDs.Next(f.Ctx)
-	require.NoError(err)
+	f.MockAcctKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	f.MockAcctKeeper.EXPECT().NewAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	escrowServ := f.MockEscrowService
-	// escrowMod := keeper.NewEscrowModule(authkeeper.NewAccountKeeper(f.Ctx, authtypes.StoreKey, ), bankkeeper.NewBaseKeeper(f.Ctx))
+	escrowMod := keeper.NewEscrowModule(f.MockAcctKeeper, f.MockBankKeeper)
 
-	require.NoError(err)
-	contract, err := escrowServ.NewContract(f.Ctx, id)
-	require.NoError(err)
+	var previousAddress types.AccAddress
+	for i := 0; i < 10; i++ {
+		id, err := f.K.IDs.Next(f.Ctx)
+		require.NoError(err)
 
-	require.Equal(t, contract.GetId(), id)
+		contract, err := escrowMod.NewContract(f.Ctx, id)
+		require.NoError(err)
 
+		address := contract.GetAddress()
+		require.NotEmpty(t, address)
+		require.NotEqual(t, address, f.ModAddr)
+		if i > 0 {
+			require.NotEqual(t, address, previousAddress)
+		}
+		previousAddress = address
+	}
 }

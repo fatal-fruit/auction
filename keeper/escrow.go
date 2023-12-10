@@ -66,7 +66,7 @@ func (ec *EscrowModContract) GetAddress() sdk.AccAddress {
 	return ec.Address
 }
 
-func (em *EscrowModule)generateUniqueAccountAddress(ctx context.Context, ak types.AccountKeeper, id uint64) (sdk.AccAddress, error) {
+func (em *EscrowModule) generateUniqueAccountAddress(ctx context.Context, ak types.AccountKeeper, id uint64) (sdk.AccAddress, error) {
 	var accountAddr sdk.AccAddress
 	for {
 		nextAccVal := id + 1
@@ -81,7 +81,7 @@ func (em *EscrowModule)generateUniqueAccountAddress(ctx context.Context, ak type
 		accountAddr = sdk.AccAddress(ac.Address())
 
 		if em.ak.GetAccount(ctx, accountAddr) != nil {
-			continue
+			return nil, fmt.Errorf("could not create get account :: %w", err)
 		}
 
 		account, err := authtypes.NewBaseAccountWithPubKey(ac)
