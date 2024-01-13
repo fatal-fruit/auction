@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 )
@@ -50,6 +51,20 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 	}
 
 	return &auctiontypes.QueryOwnerAuctionsResponse{
+		Auctions: auctions,
+	}, nil
+}
+
+func (qs queryServer) AllAuctions(goCtx context.Context, req *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
+	var auctions []*auctiontypes.ReserveAuction
+	err := qs.k.Auctions.Walk(goCtx, nil, func(id uint64, a auctiontypes.ReserveAuction) (stop bool, err error) {
+		auctions = append(auctions, &a)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &auctiontypes.QueryAllAuctionsResponse{
 		Auctions: auctions,
 	}, nil
 }

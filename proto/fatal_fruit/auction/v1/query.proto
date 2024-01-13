@@ -6,20 +6,27 @@ option go_package = "github.com/fatal-fruit/auction/types";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/query/v1/query.proto";
+import "cosmos/auth/v1beta1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "amino/amino.proto";
 import "fatal_fruit/auction/v1/types.proto";
 
-
-
+// Service Query provides methods for querying auction data.
 service Query {
+  // Auction retrieves the details of an auction by its ID.
   rpc Auction(QueryAuctionRequest) returns (QueryAuctionResponse) {
     option (google.api.http).get = "/cosmos/auction/auction/{id}";
   }
 
+  // OwnerAuctions retrieves a list of auctions owned by the specified address.
   rpc OwnerAuctions(QueryOwnerAuctionsRequest) returns (QueryOwnerAuctionsResponse){
     option (google.api.http).get = "/cosmos/auction/owner/{owner_address}/auctions";
+  }
+
+  // AllAuctions retrieves a paginated list of all auctions.
+  rpc AllAuctions(QueryAllAuctionsRequest) returns (QueryAllAuctionsResponse) {
+    option (google.api.http).get = "/cosmos/auction/auctions";
   }
 }
 
@@ -29,7 +36,22 @@ message QueryAuctionRequest { uint64 id = 1; }
 // QueryAuctionResponse is the request type for the Query/Names RPC method
 message QueryAuctionResponse { ReserveAuction auction = 1; }
 
+// QueryOwnerAuctionsRequest is the request type for querying auctions by an owner's address.
 message QueryOwnerAuctionsRequest {
   string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
+
+// QueryOwnerAuctionsResponse is the response type for the Query/OwnerAuctions RPC method.
 message QueryOwnerAuctionsResponse { repeated ReserveAuction auctions = 1; }
+
+// QueryAuctionsRequest is the request type for querying a paginated list of auctions.
+message QueryAllAuctionsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryAllAuctionsResponse is the response type for the Query/AllAuctions RPC method.
+// It includes a list of auctions and pagination details.
+message QueryAllAuctionsResponse {
+  repeated ReserveAuction auctions = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

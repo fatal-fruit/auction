@@ -12,6 +12,7 @@ import (
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"go.uber.org/mock/gomock"
 	"testing"
+	"cosmossdk.io/log"
 
 	"github.com/fatal-fruit/auction/keeper"
 )
@@ -29,6 +30,7 @@ type TestFixture struct {
 	Addrs      []sdk.AccAddress
 	ModAccount *authtypes.ModuleAccount
 	ModAddr    sdk.AccAddress
+	Logger     log.Logger
 }
 
 func InitFixture(t *testing.T) *TestFixture {
@@ -55,6 +57,7 @@ func InitFixture(t *testing.T) *TestFixture {
 		mockBankKeeper,
 		mockEscrowService,
 		sdk.DefaultBondDenom,
+		log.NewNopLogger(),
 	)
 	err := k.InitGenesis(testCtx.Ctx, auctiontypes.NewGenesisState())
 	if err != nil {
