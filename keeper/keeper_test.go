@@ -129,4 +129,21 @@ func TestPurgeCancelledAuctions(t *testing.T) {
 	require.Empty(cancelledAuctions)
 }
 
+func TestGetCancelledAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
 
+	numAuctions := 3
+	for i := 0; i < numAuctions; i++ {
+		id, err := f.K.IDs.Next(f.Ctx)
+		require.NoError(err)
+
+		auction := auctiontypes.ReserveAuction{Id: id}
+		err = f.K.Auctions.Set(f.Ctx, id, auction)
+		require.NoError(err)
+
+		err = f.K.CancelAuction(f.Ctx, id)
+		require.NoError(err)
+	}
+
+}
