@@ -219,6 +219,21 @@ func (k *Keeper) GetPending(goCtx context.Context) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Processing-Pending :: Number of pending auctions: %d", numPending))
-	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %w", pending))
+	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %d", pending))
 	return nil
 }
+
+func (k Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
+    var auctions []auctiontypes.ReserveAuction
+
+    err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
+        auctions = append(auctions, auction)
+        return false, nil
+    })
+    if err != nil {
+        panic(err) 
+    }
+
+    return auctions
+}
+

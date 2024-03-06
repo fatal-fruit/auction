@@ -1,6 +1,9 @@
 package testutil
 
 import (
+	"testing"
+
+	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -11,7 +14,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"go.uber.org/mock/gomock"
-	"testing"
 
 	"github.com/fatal-fruit/auction/keeper"
 )
@@ -55,6 +57,7 @@ func InitFixture(t *testing.T) *TestFixture {
 		mockBankKeeper,
 		mockEscrowService,
 		sdk.DefaultBondDenom,
+		log.NewNopLogger(),
 	)
 	err := k.InitGenesis(testCtx.Ctx, auctiontypes.NewGenesisState())
 	if err != nil {

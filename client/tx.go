@@ -1,7 +1,12 @@
 package client
 
 import (
+	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -9,9 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // NewContractCmd creates a CLI command for MsgNewContract.
@@ -168,5 +170,28 @@ func ExecuteAuctionCmd() *cobra.Command {
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func CmdGetAllAuctions() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get-all-auctions",
+		Short: "Query for all auctions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := auctiontypes.NewQueryClient(clientCtx)
+			res, err := queryClient.GetAllAuctions(context.Background(), &auctiontypes.QueryAllAuctionsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
 	return cmd
 }

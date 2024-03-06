@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 )
@@ -52,4 +53,17 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 	return &auctiontypes.QueryOwnerAuctionsResponse{
 		Auctions: auctions,
 	}, nil
+}
+
+func (qs queryServer) GetAllAuctions(ctx context.Context, req *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	auctions := qs.k.GetAllAuctions(sdkCtx)
+
+	// Convert to slice of pointers
+	auctionsPtrs := make([]*auctiontypes.ReserveAuction, len(auctions))
+	for i, auction := range auctions {
+		auctionsPtrs[i] = &auction
+	}
+
+	return &auctiontypes.QueryAllAuctionsResponse{Auctions: auctionsPtrs}, nil
 }

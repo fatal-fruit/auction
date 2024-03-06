@@ -1,12 +1,13 @@
 package keeper_test
 
 import (
+	"testing"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestProcessActiveAuctions(t *testing.T) {
@@ -108,4 +109,55 @@ func TestProcessExpiredAuctions(t *testing.T) {
 	isCancelled, err := f.K.CancelledAuctions.Has(f.Ctx, id2)
 	require.True(isCancelled)
 	require.NoError(err)
+}
+
+func TestGetAllAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
+
+	id1, err := f.K.IDs.Next(f.Ctx)
+	require.NoError(err)
+	id2, err := f.K.IDs.Next(f.Ctx)
+	require.NoError(err)
+
+	auctions := []auctiontypes.ReserveAuction{
+		{
+			Id:           id1,
+			Status:       auctiontypes.ACTIVE,
+			Owner:        f.Addrs[0].String(),
+			AuctionType:  auctiontypes.RESERVE,
+			ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
+			StartTime:    time.Now().Add(-30 * time.Second),
+			EndTime:      time.Now().Add(-1 * time.Second),
+			LastPrice:    sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
+			Bids: []*auctiontypes.Bid{
+				{
+					AuctionId: id1,
+					Bidder:    f.Addrs[1].String(),
+					BidPrice:  sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100),
+					Timestamp: time.Now(),
+				},
+			},
+		},
+		{
+			Id:           id2,
+			Status:       auctiontypes.ACTIVE,
+			Owner:        f.Addrs[0].String(),
+			AuctionType:  auctiontypes.RESERVE,
+			ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
+			StartTime:    time.Now().Add(-30 * time.Second),
+			EndTime:      time.Now().Add(-1 * time.Second),
+			Bids:         []*auctiontypes.Bid{},
+		},
+	}
+
+	for _, a := range auctions {
+		err = f.K.Auctions.Set(f.Ctx, a.GetId(), a)
+		require.NoError(err)
+		err = f.K.ExpiredAuctions.Set(f.Ctx, a.GetId())
+		require.NoError(err)
+	}
+
+	auctions = f.K.GetAllAuctions(f.Ctx)
+	require.Equal(2, len(auctions))
 }

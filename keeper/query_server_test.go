@@ -1,13 +1,15 @@
 package keeper_test
 
 import (
+	"testing"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/fatal-fruit/auction/keeper"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
+	"go.uber.org/mock/gomock"
 )
 
 func TestQueryAuction(t *testing.T) {
@@ -179,4 +181,27 @@ func TestQueryOwnerAuctions(t *testing.T) {
 		})
 	}
 
+}
+
+func TestQueryGetAllAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
+
+	f.MockBankKeeper.EXPECT().
+		SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), gomock.Eq(auctiontypes.ModuleName), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	auctions := []auctiontypes.ReserveAuction{
+		{Id: 1, Owner: f.Addrs[0].String()},
+		{Id: 2, Owner: f.Addrs[1].String()},
+	}
+	for _, auction := range auctions {
+		err := f.K.Auctions.Set(f.Ctx, auction.Id, auction)
+		require.NoError(err)
+	}
+
+	queryRes, err := f.QueryServer.GetAllAuctions(sdk.WrapSDKContext(f.Ctx), &auctiontypes.QueryAllAuctionsRequest{})
+	require.NoError(err)
+	require.Len(queryRes.Auctions, len(auctions))
 }
