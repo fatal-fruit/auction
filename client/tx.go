@@ -173,25 +173,3 @@ func ExecuteAuctionCmd() *cobra.Command {
 	return cmd
 }
 
-func CmdGetAllAuctions() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "get-all-auctions",
-		Short: "Query for all auctions",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := auctiontypes.NewQueryClient(clientCtx)
-			res, err := queryClient.GetAllAuctions(context.Background(), &auctiontypes.QueryAllAuctionsRequest{})
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	return cmd
-}
