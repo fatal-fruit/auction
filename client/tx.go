@@ -170,3 +170,43 @@ func ExecuteAuctionCmd() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
+
+func CancelAuctionCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "cancel-auction [auction-id] --from [sender]",
+		Args:  cobra.ExactArgs(1),
+		Short: "cancel an auction",
+		Long: strings.TrimSpace(fmt.Sprintf(`
+			$ %s tx %s cancel-auction <auction-id> --from <sender> --chain-id <chain-id>`, version.AppName, auctiontypes.ModuleName),
+		),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			if args[0] == "" {
+				return fmt.Errorf("auction-id cannot be empty")
+			}
+
+			fmt.Println(fmt.Sprintf("Auction Id :: %s", args[0]))
+
+			id, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			sender := clientCtx.GetFromAddress().String()
+
+			msg := auctiontypes.MsgCancelAuction{
+				AuctionId: id,
+				Sender:    sender,
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
