@@ -2,6 +2,10 @@ package client
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -9,9 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // NewContractCmd creates a CLI command for MsgNewContract.

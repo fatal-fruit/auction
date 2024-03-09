@@ -34,7 +34,7 @@ func TestNewAuction(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
-				contractId := uint64(1)
+				contractId := uint64(0)
 				defaultModBalance := sdk.NewInt64Coin(sdk.DefaultBondDenom, 100000)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 				contract := &keeper.EscrowModContract{
@@ -92,6 +92,7 @@ func TestNewBid(t *testing.T) {
 	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
+	contractId := uint64(0)
 	testCases := []struct {
 		name      string
 		owner     sdk.AccAddress
@@ -109,7 +110,6 @@ func TestNewBid(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
-				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
 				contract := &keeper.EscrowModContract{
@@ -151,7 +151,7 @@ func TestNewBid(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
-				contractId := uint64(1)
+				contractId++
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
 				contract := &keeper.EscrowModContract{
@@ -187,6 +187,7 @@ func TestNewBid(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
+				contractId++
 				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
 				auction := auctiontypes.ReserveAuction{
@@ -200,7 +201,7 @@ func TestNewBid(t *testing.T) {
 					Bids:         []*auctiontypes.Bid{},
 					Strategy: &auctiontypes.SettleStrategy{
 						StrategyType:          auctiontypes.SETTLE,
-						EscrowContractId:      1,
+						EscrowContractId:      contractId,
 						EscrowContractAddress: f.Addrs[2].String(),
 					},
 				}
@@ -224,6 +225,7 @@ func TestNewBid(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				contractId uint64
 			} {
+				contractId++
 				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
 				auction := auctiontypes.ReserveAuction{
@@ -245,7 +247,7 @@ func TestNewBid(t *testing.T) {
 					},
 					Strategy: &auctiontypes.SettleStrategy{
 						StrategyType:          auctiontypes.SETTLE,
-						EscrowContractId:      1,
+						EscrowContractId:      contractId,
 						EscrowContractAddress: f.Addrs[2].String(),
 					},
 				}

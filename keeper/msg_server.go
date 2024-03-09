@@ -31,7 +31,7 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*a
 		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error crediting auction deposit")
 	}
 
-	strategy, err := BuildSettleStrategy(goCtx, ms.k.es)
+	strategy, err := BuildSettleStrategy(goCtx, ms.k.es, id)
 	if err != nil {
 		// TODO: Rollback deposit
 		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating escrow contract for auction")

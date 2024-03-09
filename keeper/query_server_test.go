@@ -13,6 +13,7 @@ import (
 func TestQueryAuction(t *testing.T) {
 	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
+	contractId := uint64(0)
 
 	testCases := []struct {
 		name      string
@@ -34,7 +35,6 @@ func TestQueryAuction(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				res *auctiontypes.MsgNewAuctionResponse
 			} {
-				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
 				contract := &keeper.EscrowModContract{
@@ -117,15 +117,20 @@ func TestQueryOwnerAuctions(t *testing.T) {
 			setupTest: func(tf *auctiontestutil.TestFixture) struct {
 				ownerAuctions []uint64
 			} {
-				contractId := uint64(1)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				contract := &keeper.EscrowModContract{
-					Id:      contractId,
+				contract1 := &keeper.EscrowModContract{
+					Id:      uint64(0),
 					Address: f.Addrs[2],
 				}
 
-				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
+				contract2 := &keeper.EscrowModContract{
+					Id:      uint64(1),
+					Address: f.Addrs[2],
+				}
+
+				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contract1.Id).Return(contract1, nil).Times(1)
+				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contract2.Id).Return(contract2, nil).Times(1)
 				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(2)
 
 				msg1 := auctiontypes.MsgNewAuction{

@@ -10,11 +10,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/fatal-fruit/auction/keeper"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"go.uber.org/mock/gomock"
 	"testing"
-
-	"github.com/fatal-fruit/auction/keeper"
 )
 
 type TestFixture struct {
@@ -47,8 +46,6 @@ func InitFixture(t *testing.T) *TestFixture {
 	mockBankKeeper := NewMockBankKeeper(ctrl)
 	mockEscrowService := NewMockEscrowService(ctrl)
 
-	logger := log.NewNopLogger()
-
 	k := keeper.NewKeeper(
 		encConfig.Codec,
 		addresscodec.NewBech32Codec("cosmos"),
@@ -58,7 +55,7 @@ func InitFixture(t *testing.T) *TestFixture {
 		mockBankKeeper,
 		mockEscrowService,
 		sdk.DefaultBondDenom,
-		logger,
+		log.NewNopLogger(),
 	)
 	err := k.InitGenesis(testCtx.Ctx, auctiontypes.NewGenesisState())
 	if err != nil {
