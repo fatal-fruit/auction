@@ -68,31 +68,27 @@ func (ec *EscrowModContract) GetAddress() sdk.AccAddress {
 
 func (em *EscrowModule) generateUniqueAccountAddress(ctx context.Context, ak types.AccountKeeper, id uint64) (sdk.AccAddress, error) {
 	var accountAddr sdk.AccAddress
-	for {
-		nextAccVal := id + 1
-		derivationKey := make([]byte, 8)
+	nextAccVal := id + 1
+	derivationKey := make([]byte, 8)
 
-		binary.BigEndian.PutUint64(derivationKey, nextAccVal)
+	binary.BigEndian.PutUint64(derivationKey, nextAccVal)
 
-		ac, err := authtypes.NewModuleCredential(types.ModuleName, types.ContractAddressPrefix, derivationKey)
-		if err != nil {
-			return nil, fmt.Errorf("could not create contract account :: %w", err)
-		}
-		accountAddr = sdk.AccAddress(ac.Address())
-
-		if em.ak.GetAccount(ctx, accountAddr) != nil {
-			return nil, fmt.Errorf("could not create get account :: %w", err)
-		}
-
-		account, err := authtypes.NewBaseAccountWithPubKey(ac)
-		if err != nil {
-			return nil, fmt.Errorf("could not create contract account :: %w", err)
-		}
-
-		_ = em.ak.NewAccount(ctx, account)
-
-		break
+	ac, err := authtypes.NewModuleCredential(types.ModuleName, types.ContractAddressPrefix, derivationKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not create contract account :: %w", err)
 	}
+	accountAddr = sdk.AccAddress(ac.Address())
+
+	if em.ak.GetAccount(ctx, accountAddr) != nil {
+		return nil, fmt.Errorf("could not create get account :: %w", err)
+	}
+
+	account, err := authtypes.NewBaseAccountWithPubKey(ac)
+	if err != nil {
+		return nil, fmt.Errorf("could not create contract account :: %w", err)
+	}
+
+	_ = em.ak.NewAccount(ctx, account)
 
 	return accountAddr, nil
 }
