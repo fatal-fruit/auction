@@ -33,6 +33,10 @@ func NewAuctionCmd() *cobra.Command {
 			if args[0] == "" || args[1] == "" || args[2] == "" {
 				return fmt.Errorf("reserve-price, deposit, and duration cannot be empty")
 			}
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 			fmt.Printf("Reserve Price :: %s", args[0])
 			fmt.Printf("Duration :: %s", args[1])
 			fmt.Printf("Deposit :: %s", args[2])
@@ -97,8 +101,8 @@ func BidCmd() *cobra.Command {
 				return fmt.Errorf("contract-id and deposit cannot be empty")
 			}
 
-			fmt.Println(fmt.Sprintf("Auction Id :: %s", args[0]))
-			fmt.Println(fmt.Sprintf("Bid Price :: %w", args[1]))
+			fmt.Printf("Auction Id :: %s", args[0])
+			fmt.Printf("Bid Price :: %s", args[1])
 
 			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
@@ -149,7 +153,7 @@ func ExecuteAuctionCmd() *cobra.Command {
 				return fmt.Errorf("contract-id ")
 			}
 
-			fmt.Println(fmt.Sprintf("Auction Id :: %s", args[0]))
+			fmt.Printf("Auction Id :: %s", args[0])
 
 			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {

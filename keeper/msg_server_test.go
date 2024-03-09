@@ -77,7 +77,7 @@ func TestNewAuction(t *testing.T) {
 
 				newModAcctBalance := f.K.GetModuleBalance(f.Ctx, f.K.GetDefaultDenom())
 				require.NotNil(auction)
-				require.Equal(tc.req.Duration, auction.EndTime.Sub(auction.StartTime))
+				require.Equal(tc.req.Duration, auction.Duration)
 				require.Equal(tc.req.ReservePrice, auction.ReservePrice)
 				require.Equal(expValues.contractId, auction.Strategy.EscrowContractId)
 				require.Equal(tc.req.Owner, auction.Owner)
@@ -128,6 +128,12 @@ func TestNewBid(t *testing.T) {
 				}
 
 				auctionRes, err := f.MsgServer.NewAuction(f.Ctx, &msg1)
+				require.NoError(err)
+
+				_, err = f.MsgServer.StartAuction(f.Ctx, &auctiontypes.MsgStartAuction{
+					Owner: f.Addrs[0].String(),
+					Id:    auctionRes.GetId(),
+				})
 				require.NoError(err)
 
 				return struct {
