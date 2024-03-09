@@ -189,6 +189,9 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 	// execute strategy
 	exeuctionStrat := SettleStrategy{auction.Strategy}
 	err = exeuctionStrat.ExecuteStrategy(goCtx, auction, ms.k.es, ms.k.bk)
+	if err != nil {
+		return &at.MsgExecAuctionResponse{}, err
+	}
 	//auction.Strategy
 
 	// remove from pending
