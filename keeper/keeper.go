@@ -282,6 +282,5 @@ func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
 	}
 
 	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
-
 	return nil
 }

@@ -49,8 +49,8 @@ func (s *SettleStrategy) ToProto() *auctiontypes.SettleStrategy {
 }
 
 // Use generics
-func BuildSettleStrategy(ctx context.Context, es auctiontypes.EscrowService) (*SettleStrategy, error) {
-	contract, err := es.NewContract(ctx, 1)
+func BuildSettleStrategy(ctx context.Context, es auctiontypes.EscrowService, id uint64) (*SettleStrategy, error) {
+	contract, err := es.NewContract(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create escrow contract")
 	}

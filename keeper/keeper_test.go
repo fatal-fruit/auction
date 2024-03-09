@@ -1,4 +1,4 @@
-package keeper_test
+ package keeper_test
 
 import (
 	"testing"
@@ -94,7 +94,8 @@ func TestProcessExpiredAuctions(t *testing.T) {
 		require.NoError(err)
 	}
 
-	f.K.ProcessExpiredAuctions(f.Ctx)
+	err = f.K.ProcessExpiredAuctions(f.Ctx)
+	require.NoError(err)
 
 	for _, a := range auctions {
 		isExpired, err := f.K.ExpiredAuctions.Has(f.Ctx, a.GetId())
