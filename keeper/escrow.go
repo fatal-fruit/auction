@@ -64,9 +64,9 @@ func (em *EscrowModule) Release(ctx context.Context, id uint64, sender sdk.AccAd
 	//TODO: Refactor to get contract address
 
 	//TODO: Extend for all balances
-	balance := em.bk.GetBalance(ctx, sender, sdk.DefaultBondDenom)
+	balances := em.bk.GetAllBalances(ctx, sender)
 
-	err := em.bk.SendCoins(ctx, sender, recipient, sdk.Coins{balance})
+	err := em.bk.SendCoins(ctx, sender, recipient, balances)
 	if err != nil {
 		return err
 	}

@@ -219,6 +219,6 @@ func (k *Keeper) GetPending(goCtx context.Context) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Processing-Pending :: Number of pending auctions: %d", numPending))
-	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %w", pending))
+	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %v", pending))
 	return nil
 }
