@@ -30,7 +30,7 @@ const (
 type QueryClient interface {
 	// Auction retrieves the details of an auction by its ID.
 	Auction(ctx context.Context, in *QueryAuctionRequest, opts ...grpc.CallOption) (*QueryAuctionResponse, error)
-	// OwnerAuctions retrieves a list of auctions owned by the specified address.
+	// OwnerAuctions retrieves all auctions owned by an address.
 	OwnerAuctions(ctx context.Context, in *QueryOwnerAuctionsRequest, opts ...grpc.CallOption) (*QueryOwnerAuctionsResponse, error)
 	// AllAuctions retrieves a paginated list of all auctions.
 	AllAuctions(ctx context.Context, in *QueryAllAuctionsRequest, opts ...grpc.CallOption) (*QueryAllAuctionsResponse, error)
@@ -77,7 +77,7 @@ func (c *queryClient) AllAuctions(ctx context.Context, in *QueryAllAuctionsReque
 type QueryServer interface {
 	// Auction retrieves the details of an auction by its ID.
 	Auction(context.Context, *QueryAuctionRequest) (*QueryAuctionResponse, error)
-	// OwnerAuctions retrieves a list of auctions owned by the specified address.
+	// OwnerAuctions retrieves all auctions owned by an address.
 	OwnerAuctions(context.Context, *QueryOwnerAuctionsRequest) (*QueryOwnerAuctionsResponse, error)
 	// AllAuctions retrieves a paginated list of all auctions.
 	AllAuctions(context.Context, *QueryAllAuctionsRequest) (*QueryAllAuctionsResponse, error)

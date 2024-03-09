@@ -55,16 +55,15 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 	}, nil
 }
 
-func (qs queryServer) AllAuctions(goCtx context.Context, req *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
-	var auctions []*auctiontypes.ReserveAuction
-	err := qs.k.Auctions.Walk(goCtx, nil, func(id uint64, a auctiontypes.ReserveAuction) (stop bool, err error) {
-		auctions = append(auctions, &a)
-		return false, nil
-	})
-	if err != nil {
-		return nil, err
+func (qs queryServer) AllAuctions(ctx context.Context, _ *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	auctions := qs.k.GetAllAuctions(sdkCtx)
+
+	// Convert to slice of pointers
+	auctionsPtrs := make([]*auctiontypes.ReserveAuction, len(auctions))
+	for i, auction := range auctions {
+		auctionsPtrs[i] = &auction
 	}
-	return &auctiontypes.QueryAllAuctionsResponse{
-		Auctions: auctions,
-	}, nil
+
+	return &auctiontypes.QueryAllAuctionsResponse{Auctions: auctionsPtrs}, nil
 }

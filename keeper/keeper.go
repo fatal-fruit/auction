@@ -284,3 +284,17 @@ func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
 	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
 	return nil
 }
+
+func (k Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
+	var auctions []auctiontypes.ReserveAuction
+
+	err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
+		auctions = append(auctions, auction)
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return auctions
+}
