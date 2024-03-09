@@ -21,14 +21,19 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Query_Auction_FullMethodName       = "/fatal_fruit.auction.v1.Query/Auction"
 	Query_OwnerAuctions_FullMethodName = "/fatal_fruit.auction.v1.Query/OwnerAuctions"
+	Query_AllAuctions_FullMethodName   = "/fatal_fruit.auction.v1.Query/AllAuctions"
 )
 
 // QueryClient is the client API for Query service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueryClient interface {
+	// Auction retrieves the details of an auction by its ID.
 	Auction(ctx context.Context, in *QueryAuctionRequest, opts ...grpc.CallOption) (*QueryAuctionResponse, error)
+	// OwnerAuctions retrieves a list of auctions owned by the specified address.
 	OwnerAuctions(ctx context.Context, in *QueryOwnerAuctionsRequest, opts ...grpc.CallOption) (*QueryOwnerAuctionsResponse, error)
+	// AllAuctions retrieves a paginated list of all auctions.
+	AllAuctions(ctx context.Context, in *QueryAllAuctionsRequest, opts ...grpc.CallOption) (*QueryAllAuctionsResponse, error)
 }
 
 type queryClient struct {
@@ -57,12 +62,25 @@ func (c *queryClient) OwnerAuctions(ctx context.Context, in *QueryOwnerAuctionsR
 	return out, nil
 }
 
+func (c *queryClient) AllAuctions(ctx context.Context, in *QueryAllAuctionsRequest, opts ...grpc.CallOption) (*QueryAllAuctionsResponse, error) {
+	out := new(QueryAllAuctionsResponse)
+	err := c.cc.Invoke(ctx, Query_AllAuctions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
 type QueryServer interface {
+	// Auction retrieves the details of an auction by its ID.
 	Auction(context.Context, *QueryAuctionRequest) (*QueryAuctionResponse, error)
+	// OwnerAuctions retrieves a list of auctions owned by the specified address.
 	OwnerAuctions(context.Context, *QueryOwnerAuctionsRequest) (*QueryOwnerAuctionsResponse, error)
+	// AllAuctions retrieves a paginated list of all auctions.
+	AllAuctions(context.Context, *QueryAllAuctionsRequest) (*QueryAllAuctionsResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -75,6 +93,9 @@ func (UnimplementedQueryServer) Auction(context.Context, *QueryAuctionRequest) (
 }
 func (UnimplementedQueryServer) OwnerAuctions(context.Context, *QueryOwnerAuctionsRequest) (*QueryOwnerAuctionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OwnerAuctions not implemented")
+}
+func (UnimplementedQueryServer) AllAuctions(context.Context, *QueryAllAuctionsRequest) (*QueryAllAuctionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AllAuctions not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -125,6 +146,24 @@ func _Query_OwnerAuctions_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_AllAuctions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAllAuctionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).AllAuctions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_AllAuctions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).AllAuctions(ctx, req.(*QueryAllAuctionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +178,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "OwnerAuctions",
 			Handler:    _Query_OwnerAuctions_Handler,
+		},
+		{
+			MethodName: "AllAuctions",
+			Handler:    _Query_AllAuctions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

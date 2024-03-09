@@ -1,12 +1,13 @@
  package keeper_test
 
 import (
+	"testing"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestProcessActiveAuctions(t *testing.T) {
@@ -109,4 +110,41 @@ func TestProcessExpiredAuctions(t *testing.T) {
 	isCancelled, err := f.K.CancelledAuctions.Has(f.Ctx, id2)
 	require.True(isCancelled)
 	require.NoError(err)
+}
+
+func TestPurgeCancelledAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
+
+	for i := 0; i < 3; i++ {
+		id, err := f.K.IDs.Next(f.Ctx)
+		require.NoError(err)
+		err = f.K.CancelledAuctions.Set(f.Ctx, id)
+		require.NoError(err)
+	}
+
+	err := f.K.PurgeCancelledAuctions(f.Ctx)
+	require.NoError(err)
+
+	cancelledAuctions := f.K.GetCancelledAuctions(f.Ctx)
+	require.Empty(cancelledAuctions)
+}
+
+func TestGetCancelledAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
+
+	numAuctions := 3
+	for i := 0; i < numAuctions; i++ {
+		id, err := f.K.IDs.Next(f.Ctx)
+		require.NoError(err)
+
+		auction := auctiontypes.ReserveAuction{Id: id}
+		err = f.K.Auctions.Set(f.Ctx, id, auction)
+		require.NoError(err)
+
+		err = f.K.CancelAuction(f.Ctx, id)
+		require.NoError(err)
+	}
+
 }

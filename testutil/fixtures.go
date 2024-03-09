@@ -29,6 +29,7 @@ type TestFixture struct {
 	Addrs      []sdk.AccAddress
 	ModAccount *authtypes.ModuleAccount
 	ModAddr    sdk.AccAddress
+	Logger     log.Logger
 }
 
 func InitFixture(t *testing.T) *TestFixture {

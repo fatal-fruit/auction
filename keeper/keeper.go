@@ -220,6 +220,67 @@ func (k *Keeper) GetPending(goCtx context.Context) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("Processing-Pending :: Number of pending auctions: %d", numPending))
-	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %v", pending))
+	logger.Info(fmt.Sprintf("Processing-Pending :: Pending Auctions: %d", pending))
+	return nil
+}
+
+func (k *Keeper) PurgeCancelledAuctions(ctx context.Context) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	err := k.CancelledAuctions.Walk(sdkCtx, nil, func(auctionId uint64) (stop bool, err error) {
+		err = k.CancelledAuctions.Remove(ctx, auctionId)
+		if err != nil {
+			return true, err
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		k.Logger().Error("Failed to purge cancelled auctions", "error", err)
+		return err
+	}
+
+	k.Logger().Info("All cancelled auctions have been purged")
+	return nil
+}
+
+func (k *Keeper) GetCancelledAuctions(goCtx context.Context) error {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := ctx.Logger()
+	logger.Info("Processing-Cancelled :: Checking for cancelled auctions")
+	var numCancelled int
+
+	var cancelled []uint64
+	err := k.CancelledAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
+		if err != nil {
+			return true, err
+		}
+		cancelled = append(cancelled, auctionId)
+		numCancelled++
+		return false, nil
+	})
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("Processing-Cancelled :: Number of cancelled auctions: %d", numCancelled))
+	logger.Info(fmt.Sprintf("Processing-Cancelled :: Cancelled Auctions: %v", cancelled))
+	return nil
+}
+
+// CancelAuction marks an auction as cancelled by its ID.
+func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	_, err := k.Auctions.Get(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("auction with ID %d not found: %v", auctionId, err)
+	}
+
+	err = k.CancelledAuctions.Set(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("failed to cancel auction with ID %d: %v", auctionId, err)
+	}
+
+	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
 	return nil
 }

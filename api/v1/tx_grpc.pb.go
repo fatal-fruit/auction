@@ -29,9 +29,13 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
+	// NewAuction creates a new auction.
 	NewAuction(ctx context.Context, in *MsgNewAuction, opts ...grpc.CallOption) (*MsgNewAuctionResponse, error)
+	// StartAuction initializes the auction
 	StartAuction(ctx context.Context, in *MsgStartAuction, opts ...grpc.CallOption) (*MsgStartAuctionResponse, error)
+	// NewBid places a new bid on an auction.
 	NewBid(ctx context.Context, in *MsgNewBid, opts ...grpc.CallOption) (*MsgNewBidResponse, error)
+	// Exec executes an auction, distributing funds and finalizing the auction.
 	Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.CallOption) (*MsgExecAuctionResponse, error)
 }
 
@@ -83,9 +87,13 @@ func (c *msgClient) Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.C
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
+	// NewAuction creates a new auction.
 	NewAuction(context.Context, *MsgNewAuction) (*MsgNewAuctionResponse, error)
+	// StartAuction initializes the auction
 	StartAuction(context.Context, *MsgStartAuction) (*MsgStartAuctionResponse, error)
+	// NewBid places a new bid on an auction.
 	NewBid(context.Context, *MsgNewBid) (*MsgNewBidResponse, error)
+	// Exec executes an auction, distributing funds and finalizing the auction.
 	Exec(context.Context, *MsgExecAuction) (*MsgExecAuctionResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }

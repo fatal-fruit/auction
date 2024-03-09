@@ -11,24 +11,31 @@ import "fatal_fruit/auction/v1/types.proto";
 import "cosmos_proto/cosmos.proto";
 import "google/protobuf/duration.proto";
 
-
+// Msg defines the auction Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
+  // NewAuction creates a new auction.
   rpc NewAuction(MsgNewAuction) returns (MsgNewAuctionResponse);
 
+  // StartAuction initializes the auction
   rpc StartAuction(MsgStartAuction) returns (MsgStartAuctionResponse);
 
+  // NewBid places a new bid on an auction.
   rpc NewBid(MsgNewBid) returns (MsgNewBidResponse);
 
+  // Exec executes an auction, distributing funds and finalizing the auction.
   rpc Exec(MsgExecAuction) returns (MsgExecAuctionResponse);
 }
 
+// MsgNewAuction represents a request to create a new auction.
 message MsgNewAuction {
   option (cosmos.msg.v1.signer) = "owner";
 
+  // owner is the address of the auction creator.
   string owner = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 
+  // deposit is the initial deposit amount for the auction.
   repeated cosmos.base.v1beta1.Coin deposit = 2 [
     (gogoproto.nullable)     = false,
     (amino.dont_omitempty)   = true,
@@ -36,6 +43,7 @@ message MsgNewAuction {
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 
+  // reserve_price is the minimum price for the auction.
   cosmos.base.v1beta1.Coin reserve_price = 3 [
     (gogoproto.nullable)     = false,
     (amino.dont_omitempty)   = true,
@@ -43,14 +51,17 @@ message MsgNewAuction {
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 
-  // expiration specifies an optional time when this allowance expires
+  // duration specifies the time duration of the auction.
   google.protobuf.Duration duration = 4
   [(gogoproto.stdduration) = true, (gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 
+  // auction_type specifies the type of the auction.
   string auction_type = 5;
 }
 
+// MsgNewAuctionResponse defines the response for a successful auction creation.
 message MsgNewAuctionResponse{
+  // id is the unique identifier of the created auction.
   uint64 id = 1;
 }
 
@@ -64,13 +75,32 @@ message MsgStartAuction {
 
 message MsgStartAuctionResponse {}
 
+// MsgCancelAuction represents a request to cancel an auction.
+message MsgCancelAuction {
+  option (cosmos.msg.v1.signer) = "sender";
+
+  // sender is the address of the request initiator.
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // auction_id is the unique identifier of the auction to cancel.
+  uint64 auction_id = 2;
+}
+
+// MsgCancelAuctionResponse defines the response for a successful auction cancellation.
+message MsgCancelAuctionResponse {
+  // MsgCancelAuctionResponse defines the response for a MsgCancelAuction call.
+}
+
+// MsgNewBid represents a request to place a bid on an auction.
 message MsgNewBid {
   option (cosmos.msg.v1.signer) = "owner";
 
+  // owner is the address of the bidder.
   string owner = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 
+  // auction_id is the unique identifier of the auction to bid on.
   uint64 auction_id = 2;
 
+  // bid is the amount of the bid.
   cosmos.base.v1beta1.Coin bid = 3 [
     (gogoproto.nullable)     = false,
     (amino.dont_omitempty)   = true,
@@ -79,12 +109,18 @@ message MsgNewBid {
   ];
 }
 
+// MsgNewBidResponse defines the response for a successful bid placement.
 message MsgNewBidResponse{}
 
+// MsgExecAuction represents a request to execute an auction.
 message MsgExecAuction {
   option (cosmos.msg.v1.signer) = "sender";
 
+  // sender is the address of the request initiator.
   string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // auction_id is the unique identifier of the auction to execute.
   uint64 auction_id = 2;
 }
+
+// MsgExecAuctionResponse defines the response for a successful auction execution.
 message MsgExecAuctionResponse{}
