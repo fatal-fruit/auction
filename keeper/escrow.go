@@ -2,8 +2,12 @@ package keeper
 
 import (
 	"context"
+	// "crypto/rand"
 	"encoding/binary"
 	"fmt"
+
+	// "math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/fatal-fruit/auction/types"
@@ -29,29 +33,9 @@ func NewEscrowModule(ak types.AccountKeeper, bk types.BankKeeper) types.EscrowSe
 
 func (em *EscrowModule) NewContract(ctx context.Context, id uint64) (types.EscrowContract, error) {
 	// Generate account address of contract
-	var accountAddr sdk.AccAddress
-	for {
-		nextAccVal := id
-		derivationKey := make([]byte, 8)
-		binary.BigEndian.PutUint64(derivationKey, nextAccVal)
-
-		ac, err := authtypes.NewModuleCredential(types.ModuleName, types.ContractAddressPrefix, derivationKey)
-		if err != nil {
-			return nil, fmt.Errorf("could not create contract account :: %w", err)
-		}
-		accountAddr = sdk.AccAddress(ac.Address())
-		if em.ak.GetAccount(ctx, accountAddr) != nil {
-			continue
-		}
-
-		account, err := authtypes.NewBaseAccountWithPubKey(ac)
-		if err != nil {
-			return nil, fmt.Errorf("could not create contract account :: %w", err)
-		}
-
-		_ = em.ak.NewAccount(ctx, account)
-
-		break
+	accountAddr, err := em.generateUniqueAccountAddress(ctx, em.ak, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate unique account address: %w", err)
 	}
 
 	return &EscrowModContract{
@@ -64,9 +48,9 @@ func (em *EscrowModule) Release(ctx context.Context, id uint64, sender sdk.AccAd
 	//TODO: Refactor to get contract address
 
 	//TODO: Extend for all balances
-	balance := em.bk.GetBalance(ctx, sender, sdk.DefaultBondDenom)
+	balances := em.bk.GetAllBalances(ctx, sender)
 
-	err := em.bk.SendCoins(ctx, sender, recipient, sdk.Coins{balance})
+	err := em.bk.SendCoins(ctx, sender, recipient, balances)
 	if err != nil {
 		return err
 	}
@@ -80,4 +64,31 @@ func (ec *EscrowModContract) GetId() uint64 {
 
 func (ec *EscrowModContract) GetAddress() sdk.AccAddress {
 	return ec.Address
+}
+
+func (em *EscrowModule) generateUniqueAccountAddress(ctx context.Context, ak types.AccountKeeper, id uint64) (sdk.AccAddress, error) {
+	var accountAddr sdk.AccAddress
+	nextAccVal := id + 1
+	derivationKey := make([]byte, 8)
+
+	binary.BigEndian.PutUint64(derivationKey, nextAccVal)
+
+	ac, err := authtypes.NewModuleCredential(types.ModuleName, types.ContractAddressPrefix, derivationKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not create contract account :: %w", err)
+	}
+	accountAddr = sdk.AccAddress(ac.Address())
+
+	if em.ak.GetAccount(ctx, accountAddr) != nil {
+		return nil, fmt.Errorf("could not create get account :: %w", err)
+	}
+
+	account, err := authtypes.NewBaseAccountWithPubKey(ac)
+	if err != nil {
+		return nil, fmt.Errorf("could not create contract account :: %w", err)
+	}
+
+	_ = em.ak.NewAccount(ctx, account)
+
+	return accountAddr, nil
 }

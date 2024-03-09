@@ -8,6 +8,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "amino/amino.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 
 message ReserveAuction {
   uint64 id = 1;
@@ -22,21 +23,25 @@ message ReserveAuction {
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 
+  google.protobuf.Duration duration = 6
+  [(gogoproto.stdduration) = true, (gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
   // start_time and end_time are calculated from the contract duration
-  google.protobuf.Timestamp start_time = 6
+  google.protobuf.Timestamp start_time = 7
   [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
-  google.protobuf.Timestamp end_time = 7
+  google.protobuf.Timestamp end_time = 8
   [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
 
-  repeated Bid bids = 8;
-  cosmos.base.v1beta1.Coin last_price = 9 [
+  repeated Bid bids = 9;
+
+  cosmos.base.v1beta1.Coin last_price = 10 [
     (gogoproto.nullable)     = false,
     (amino.dont_omitempty)   = true,
     (amino.encoding)         = "legacy_coins",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 
-  SettleStrategy strategy = 10;
+  SettleStrategy strategy = 11;
 }
 
 message OwnerAuctions {

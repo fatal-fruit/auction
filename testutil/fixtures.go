@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -9,12 +10,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/fatal-fruit/auction/keeper"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"go.uber.org/mock/gomock"
 	"testing"
-	"cosmossdk.io/log"
-
-	"github.com/fatal-fruit/auction/keeper"
 )
 
 type TestFixture struct {

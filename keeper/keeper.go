@@ -2,11 +2,12 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
@@ -263,5 +264,23 @@ func (k *Keeper) GetCancelledAuctions(goCtx context.Context) error {
 	}
 	logger.Info(fmt.Sprintf("Processing-Cancelled :: Number of cancelled auctions: %d", numCancelled))
 	logger.Info(fmt.Sprintf("Processing-Cancelled :: Cancelled Auctions: %v", cancelled))
+	return nil
+}
+
+// CancelAuction marks an auction as cancelled by its ID.
+func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	_, err := k.Auctions.Get(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("auction with ID %d not found: %v", auctionId, err)
+	}
+
+	err = k.CancelledAuctions.Set(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("failed to cancel auction with ID %d: %v", auctionId, err)
+	}
+
+	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
 	return nil
 }
