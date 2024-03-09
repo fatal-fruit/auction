@@ -128,6 +128,7 @@ func (AppModule) GetTxCmd() *cobra.Command {
 		auctioncli.NewAuctionCmd(),
 		auctioncli.BidCmd(),
 		auctioncli.ExecuteAuctionCmd(),
+		auctioncli.CancelAuctionCmd(),
 	)
 	return cmd
 }
