@@ -5,11 +5,7 @@ option go_package = "github.com/fatal-fruit/auction/types";
 
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
-import "cosmos/query/v1/query.proto";
-import "cosmos/auth/v1beta1/query.proto";
 import "cosmos_proto/cosmos.proto";
-import "gogoproto/gogo.proto";
-import "amino/amino.proto";
 import "fatal_fruit/auction/v1/types.proto";
 
 // Service Query provides methods for querying auction data.
@@ -53,5 +49,6 @@ message QueryAllAuctionsRequest {
 // It includes a list of auctions and pagination details.
 message QueryAllAuctionsResponse {
   repeated ReserveAuction auctions = 1;
+
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

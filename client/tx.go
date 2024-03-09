@@ -190,7 +190,7 @@ func CancelAuctionCmd() *cobra.Command {
 				return fmt.Errorf("auction-id cannot be empty")
 			}
 
-			fmt.Println(fmt.Sprintf("Auction Id :: %s", args[0]))
+			fmt.Printf("Auction Id :: %s", args[0])
 
 			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
