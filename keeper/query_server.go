@@ -55,7 +55,7 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 	}, nil
 }
 
-func (qs queryServer) GetAllAuctions(ctx context.Context, req *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
+func (qs queryServer) AllAuctions(ctx context.Context, _ *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	auctions := qs.k.GetAllAuctions(sdkCtx)
 

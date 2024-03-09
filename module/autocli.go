@@ -19,6 +19,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 						{ProtoField: "id"},
 					},
 				},
+				{
+					RpcMethod: "AllAuctions",
+					Use:       "all-auctions",
+					Short:     "Get all auctions",
+				},
+				{
+					RpcMethod: "OwnerAuctions",
+					Use:       "owner-auctions [owner-address]",
+					Short:     "Query auctions by owner address",
+				},
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{

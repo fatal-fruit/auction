@@ -94,7 +94,8 @@ func TestProcessExpiredAuctions(t *testing.T) {
 		require.NoError(err)
 	}
 
-	f.K.ProcessExpiredAuctions(f.Ctx)
+	err = f.K.ProcessExpiredAuctions(f.Ctx)
+	require.NoError(err)
 
 	for _, a := range auctions {
 		isExpired, err := f.K.ExpiredAuctions.Has(f.Ctx, a.GetId())
@@ -160,4 +161,40 @@ func TestGetAllAuctions(t *testing.T) {
 
 	auctions = f.K.GetAllAuctions(f.Ctx)
 	require.Equal(2, len(auctions))
+}
+
+func TestPurgeCancelledAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
+
+	for i := 0; i < 3; i++ {
+		id, err := f.K.IDs.Next(f.Ctx)
+		require.NoError(err)
+		err = f.K.CancelledAuctions.Set(f.Ctx, id)
+		require.NoError(err)
+	}
+
+	err := f.K.PurgeCancelledAuctions(f.Ctx)
+	require.NoError(err)
+
+	cancelledAuctions := f.K.GetCancelledAuctions(f.Ctx)
+	require.Empty(cancelledAuctions)
+}
+
+func TestGetCancelledAuctions(t *testing.T) {
+	f := auctiontestutil.InitFixture(t)
+	require := require.New(t)
+
+	numAuctions := 3
+	for i := 0; i < numAuctions; i++ {
+		id, err := f.K.IDs.Next(f.Ctx)
+		require.NoError(err)
+
+		auction := auctiontypes.ReserveAuction{Id: id}
+		err = f.K.Auctions.Set(f.Ctx, id, auction)
+		require.NoError(err)
+
+		err = f.K.CancelAuction(f.Ctx, id)
+		require.NoError(err)
+	}
 }

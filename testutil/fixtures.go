@@ -1,8 +1,6 @@
 package testutil
 
 import (
-	"testing"
-
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
@@ -12,10 +10,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/fatal-fruit/auction/keeper"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"go.uber.org/mock/gomock"
-
-	"github.com/fatal-fruit/auction/keeper"
+	"testing"
 )
 
 type TestFixture struct {
@@ -31,6 +29,7 @@ type TestFixture struct {
 	Addrs      []sdk.AccAddress
 	ModAccount *authtypes.ModuleAccount
 	ModAddr    sdk.AccAddress
+	Logger     log.Logger
 }
 
 func InitFixture(t *testing.T) *TestFixture {

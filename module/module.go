@@ -68,8 +68,7 @@ func (AppModule) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 func (AppModule) ConsensusVersion() uint64 { return ConsensusVersion }
 
 func (am AppModule) EndBlock(ctx context.Context) error {
-	auctionabci.EndBlocker(ctx, am.keeper, am.keeper.Logger())
-	return nil
+	return auctionabci.EndBlocker(ctx, am.keeper, am.keeper.Logger())
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
