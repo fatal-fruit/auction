@@ -85,15 +85,10 @@ func (ms msgServer) StartAuction(goCtx context.Context, msg *at.MsgStartAuction)
 	}
 
 	// Generate start/end time
-	start := ctx.BlockTime()
-	end := start.Add(auction.Duration)
-
-	// Set Start and End time for auction
-	auction.StartTime = start
-	auction.EndTime = end
+	auction.StartAuction(ctx.BlockTime())
 
 	// Save updated auction
-	err = ms.k.Auctions.Set(goCtx, auction.GetId(), &auction)
+	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 	if err != nil {
 		return &at.MsgStartAuctionResponse{}, err
 	}
@@ -120,29 +115,11 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNew
 			return &at.MsgNewBidResponse{}, err
 		}
 
-		// Validate bid price is over Reserve Price
-		if msg.Bid.IsLT(auction.ReservePrice) {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("bid lower than reserve price")
+		err = auction.SubmitBid(ctx.BlockTime(), msg)
+		if err != nil {
+			return &at.MsgNewBidResponse{}, err
+
 		}
-
-		// Validate auction is active
-		if ctx.BlockTime().After(auction.EndTime) {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("expired auction")
-		}
-
-		// Validate bid price is competitive
-		if len(auction.Bids) > 0 && msg.Bid.IsLTE(auction.LastPrice) {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("bid lower than latest price")
-		}
-
-		auction.Bids = append(auction.Bids, &at.Bid{
-			AuctionId: msg.AuctionId,
-			Bidder:    msg.Owner,
-			BidPrice:  msg.Bid,
-			Timestamp: ctx.BlockTime(),
-		})
-
-		auction.LastPrice = msg.Bid
 
 		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 		if err != nil {
@@ -170,13 +147,10 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 		return &at.MsgExecAuctionResponse{}, err
 	}
 
-	// execute strategy
-	exeuctionStrat := SettleStrategy{auction.Strategy}
-	err = exeuctionStrat.ExecuteStrategy(goCtx, auction, ms.k.es, ms.k.bk)
+	err = ms.k.ExecuteAuction(goCtx, auction)
 	if err != nil {
 		return &at.MsgExecAuctionResponse{}, err
 	}
-	//auction.Strategy
 
 	// remove from pending
 	err = ms.k.PendingAuctions.Remove(goCtx, msg.GetAuctionId())
@@ -184,7 +158,7 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 		return &at.MsgExecAuctionResponse{}, err
 	}
 	//update status
-	auction.Status = at.CLOSED
+	auction.UpdateStatus(at.CLOSED)
 	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 	if err != nil {
 		return &at.MsgExecAuctionResponse{}, err

@@ -5,7 +5,25 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
+	"time"
 )
+
+type Auction interface {
+	proto.Message
+
+	GetId() uint64
+	GetType() string
+	SetOwner(owner sdk.AccAddress)
+	UpdateStatus(string)
+	StartAuction(blockTime time.Time)
+	SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) error
+	IsExpired(blockTime time.Time) bool
+	HasBids() bool
+}
+
+type AuctionMetadata interface {
+	proto.Message
+}
 
 type AuctionResolver interface {
 	AddType(key string, h AuctionHandler) (rsv AuctionResolver)
@@ -21,18 +39,7 @@ type auctionResolver struct {
 
 type AuctionHandler interface {
 	CreateAuction(ctx context.Context, id uint64, metadata AuctionMetadata) (Auction, error)
-}
-
-type Auction interface {
-	proto.Message
-
-	GetId() uint64
-	SetOwner(owner sdk.AccAddress)
-	SubmitBid()
-}
-
-type AuctionMetadata interface {
-	proto.Message
+	ExecAuction(ctx context.Context, a Auction) error
 }
 
 func (m *MsgNewAuction) SetMetadata(metadata AuctionMetadata) error {
@@ -43,5 +50,3 @@ func (m *MsgNewAuction) SetMetadata(metadata AuctionMetadata) error {
 	m.AuctionMetadata = md
 	return nil
 }
-
-// GetContent returns the proposal Content

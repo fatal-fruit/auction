@@ -29,3 +29,13 @@ func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sd
 
 	return auction, nil
 }
+
+func (k *Keeper) ExecuteAuction(ctx context.Context, auction auctiontypes.Auction) error {
+	if !k.resolver.HasType(auction.GetType()) {
+		return fmt.Errorf("proposal type %s is not registered", auction.GetType())
+	}
+
+	handler := k.resolver.GetHandler(auction.GetType())
+
+	return handler.ExecAuction(ctx, auction)
+}

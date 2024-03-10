@@ -48,7 +48,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 
 	sb := collections.NewSchemaBuilder(storeService)
 	ids := collections.NewSequence(sb, auctiontypes.IDKey, "auctionIds")
-	auctions := collections.NewMap(sb, auctiontypes.AuctionsKey, "auctions", collections.Uint64Key, codec.CollValue[auctiontypes.Auction](cdc))
+	auctions := collections.NewMap(sb, auctiontypes.AuctionsKey, "auctions", collections.Uint64Key, codec.CollValue[&auctiontypes.Auction](cdc))
 	ownerAuctions := collections.NewMap(sb, auctiontypes.OwnerAuctionsKey, "ownerAuctions", sdk.AccAddressKey, codec.CollValue[auctiontypes.OwnerAuctions](cdc))
 	activeAuctions := collections.NewKeySet(sb, auctiontypes.ActiveAuctionsKey, "activeAuctions", collections.Uint64Key)
 	expiredAuctions := collections.NewKeySet(sb, auctiontypes.ExpiredAuctionsKey, "expiredAuctions", collections.Uint64Key)
@@ -118,10 +118,11 @@ func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 			return true, err
 		}
 		// TODO: Auction checks itself for expiration
-		if auction.EndTime.Before(ctx.BlockTime()) {
+		if auction.IsExpired(ctx.BlockTime()) {
 			expired = append(expired, auctionId)
+		} else {
+			numActive++
 		}
-		numActive++
 		return false, nil
 	})
 	if err != nil {
@@ -159,7 +160,7 @@ func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 		}
 
 		// TODO: Auction executes own logic for this
-		if len(auction.Bids) > 0 {
+		if auction.HasBids() {
 			pending = append(pending, auctionId)
 		} else {
 			cancelled = append(cancelled, auctionId)
@@ -292,15 +293,16 @@ func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
 }
 
 func (k *Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
-	var auctions []auctiontypes.ReserveAuction
-
-	err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
-		auctions = append(auctions, auction)
-		return false, nil
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	return auctions
+	//var auctions []auctiontypes.ReserveAuction
+	//
+	//err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
+	//	auctions = append(auctions, auction)
+	//	return false, nil
+	//})
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//return auctions
+	return nil
 }
