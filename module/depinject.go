@@ -40,6 +40,7 @@ type ModuleInputs struct {
 
 	AccountKeeper auctiontypes.AccountKeeper
 	BankKeeper    auctiontypes.BankKeeper
+	//EscrowService auctiontypes.EscrowService
 
 	Config *modulev1.Module
 }
@@ -59,7 +60,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	}
 
 	// TODO: Remove with implementation
-	es := keeper.NewEscrowModule(in.AccountKeeper, in.BankKeeper)
+	es := keeper.NewTestEscrowModule(in.AccountKeeper, in.BankKeeper)
 
 	k := keeper.NewKeeper(in.Cdc, in.AddressCodec, in.StoreService, authority.String(), in.AccountKeeper, in.BankKeeper, es, in.Config.DefaultDenom, in.Logger)
 	m := NewAppModule(in.Cdc, k)

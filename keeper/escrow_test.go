@@ -17,7 +17,7 @@ func TestNewContract(t *testing.T) {
 	f.MockAcctKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	f.MockAcctKeeper.EXPECT().NewAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	escrowMod := keeper.NewEscrowModule(f.MockAcctKeeper, f.MockBankKeeper)
+	escrowMod := keeper.NewTestEscrowModule(f.MockAcctKeeper, f.MockBankKeeper)
 
 	var previousAddress types.AccAddress
 	for i := 0; i < 10; i++ {

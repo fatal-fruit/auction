@@ -24,7 +24,7 @@ type EscrowModContract struct {
 	Address sdk.AccAddress
 }
 
-func NewEscrowModule(ak types.AccountKeeper, bk types.BankKeeper) types.EscrowService {
+func NewTestEscrowModule(ak types.AccountKeeper, bk types.BankKeeper) types.EscrowService {
 	return &EscrowModule{
 		ak: ak,
 		bk: bk,

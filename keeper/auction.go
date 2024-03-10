@@ -1,14 +1,31 @@
 package keeper
 
-import auctiontypes "github.com/fatal-fruit/auction/types"
+import (
+	"context"
+	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	auctiontypes "github.com/fatal-fruit/auction/types"
+)
 
-func GetWinner(auction auctiontypes.ReserveAuction) (*auctiontypes.Bid, error) {
-	var highestBid *auctiontypes.Bid
-	for _, b := range auction.Bids {
-		if highestBid.GetBidPrice().IsNil() || b.GetBidPrice().IsGTE(highestBid.GetBidPrice()) {
-			highestBid = b
-		}
+func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sdk.AccAddress, md auctiontypes.AuctionMetadata) (auctiontypes.Auction, error) {
+	// Check if keeper has registered auction type
+	if !k.resolver.HasType(auctionType) {
+		return nil, fmt.Errorf("proposal type %s is not registered", auctionType)
 	}
 
-	return highestBid, nil
+	handler := k.resolver.GetHandler(auctionType)
+
+	// Get Next Id
+	id, err := k.IDs.Next(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error creating id for auction")
+	}
+
+	auction, err := handler.CreateAuction(ctx, id, md)
+	if err != nil {
+		return nil, fmt.Errorf("error creating auction")
+	}
+	auction.SetOwner(owner)
+
+	return auction, nil
 }

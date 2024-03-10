@@ -9,6 +9,7 @@ import "cosmos/base/v1beta1/coin.proto";
 import "amino/amino.proto";
 import "fatal_fruit/auction/v1/types.proto";
 import "cosmos_proto/cosmos.proto";
+import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 
 // Msg defines the auction Msg service.
@@ -35,28 +36,17 @@ message MsgNewAuction {
   // owner is the address of the auction creator.
   string owner = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 
+  string auction_type = 2;
+
   // deposit is the initial deposit amount for the auction.
-  repeated cosmos.base.v1beta1.Coin deposit = 2 [
+  repeated cosmos.base.v1beta1.Coin deposit = 3 [
     (gogoproto.nullable)     = false,
     (amino.dont_omitempty)   = true,
     (amino.encoding)         = "legacy_coins",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
-  ];
+    ];
 
-  // reserve_price is the minimum price for the auction.
-  cosmos.base.v1beta1.Coin reserve_price = 3 [
-    (gogoproto.nullable)     = false,
-    (amino.dont_omitempty)   = true,
-    (amino.encoding)         = "legacy_coins",
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
-  ];
-
-  // duration specifies the time duration of the auction.
-  google.protobuf.Duration duration = 4
-  [(gogoproto.stdduration) = true, (gogoproto.nullable) = false, (amino.dont_omitempty) = true];
-
-  // auction_type specifies the type of the auction.
-  string auction_type = 5;
+  google.protobuf.Any auction_metadata = 4 [(cosmos_proto.accepts_interface) = "fatal_fruit.auction.v1.AuctionMetadata"];
 }
 
 // MsgNewAuctionResponse defines the response for a successful auction creation.

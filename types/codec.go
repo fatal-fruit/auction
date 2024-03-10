@@ -11,7 +11,7 @@ import (
 // RegisterLegacyAminoCodec registers the necessary interfaces and concrete types
 // on the provided LegacyAmino codec. These types are used for Amino JSON serialization.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgNewAuction{}, "escrow/MsgNewAuction")
+	legacy.RegisterAminoMsg(cdc, &MsgNewAuction{}, "auction/MsgNewAuction")
 
 }
 
@@ -19,6 +19,11 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry types.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgNewAuction{},
+	)
+	registry.RegisterInterface(
+		"fatal_fruit.auction.v1.AuctionMetadata",
+		(*AuctionMetadata)(nil),
+		&ReserveAuctionMetadata{},
 	)
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
