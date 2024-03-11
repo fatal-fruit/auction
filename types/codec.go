@@ -19,11 +19,21 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry types.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgNewAuction{},
+		&MsgNewBid{},
+		&MsgStartAuction{},
+		&MsgExecAuction{},
 	)
+
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
+
 	registry.RegisterInterface(
 		"fatal_fruit.auction.v1.AuctionMetadata",
 		(*AuctionMetadata)(nil),
 		&ReserveAuctionMetadata{},
 	)
-	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
+	registry.RegisterInterface(
+		"fatal_fruit.auction.v1.Auction",
+		(*Auction)(nil),
+		&ReserveAuction{},
+	)
 }

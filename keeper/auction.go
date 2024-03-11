@@ -10,7 +10,7 @@ import (
 func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sdk.AccAddress, md auctiontypes.AuctionMetadata) (auctiontypes.Auction, error) {
 	// Check if keeper has registered auction type
 	if !k.resolver.HasType(auctionType) {
-		return nil, fmt.Errorf("proposal type %s is not registered", auctionType)
+		return nil, fmt.Errorf("auction type %s is not registered", auctionType)
 	}
 
 	handler := k.resolver.GetHandler(auctionType)
@@ -32,7 +32,7 @@ func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sd
 
 func (k *Keeper) ExecuteAuction(ctx context.Context, auction auctiontypes.Auction) error {
 	if !k.resolver.HasType(auction.GetType()) {
-		return fmt.Errorf("proposal type %s is not registered", auction.GetType())
+		return fmt.Errorf("auction type %s is not registered", auction.GetType())
 	}
 
 	handler := k.resolver.GetHandler(auction.GetType())

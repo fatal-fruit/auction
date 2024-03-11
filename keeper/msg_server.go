@@ -21,7 +21,13 @@ func NewMsgServerImpl(keeper Keeper) at.MsgServer {
 func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*at.MsgNewAuctionResponse, error) {
 	owner := sdk.MustAccAddressFromBech32(msg.Owner)
 
-	auction, err := ms.k.CreateAuction(goCtx, msg.AuctionType, owner, msg.AuctionMetadata)
+	var md at.AuctionMetadata
+	err := ms.k.cdc.UnpackAny(msg.GetAuctionMetadata(), &md)
+	if err != nil {
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error serializing auction metadata")
+	}
+
+	auction, err := ms.k.CreateAuction(goCtx, msg.AuctionType, owner, md)
 	if err != nil {
 		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
 	}

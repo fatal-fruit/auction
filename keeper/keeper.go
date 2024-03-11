@@ -22,7 +22,6 @@ type Keeper struct {
 
 	ak           auctiontypes.AccountKeeper
 	bk           auctiontypes.BankKeeper
-	es           auctiontypes.EscrowService
 	defaultDenom string
 
 	// state management
@@ -41,7 +40,8 @@ type Keeper struct {
 	resolver auctiontypes.AuctionResolver
 }
 
-func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, es auctiontypes.EscrowService, denom string, logger log.Logger) Keeper {
+// Todo: remove escrow, pass auction type resolver
+func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, resolver auctiontypes.AuctionResolver, denom string, logger log.Logger) Keeper {
 	if _, err := addressCodec.StringToBytes(authority); err != nil {
 		panic(fmt.Errorf("invalid authority address: %w", err))
 	}
@@ -61,7 +61,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 		authority:    authority,
 		ak:           ak,
 		bk:           bk,
-		es:           es,
+		resolver:     resolver,
 		defaultDenom: denom,
 		logger:       logger,
 	}

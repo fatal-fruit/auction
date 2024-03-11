@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
-
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 )
@@ -24,9 +24,14 @@ func (qs queryServer) Auction(goCtx context.Context, r *auctiontypes.QueryAuctio
 	if err != nil {
 		return &auctiontypes.QueryAuctionResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve auction with id :: %d", r.GetId()))
 	}
-	
+
+	aa, err := codectypes.NewAnyWithValue(auction)
+	if err != nil {
+		return &auctiontypes.QueryAuctionResponse{}, err
+	}
+
 	return &auctiontypes.QueryAuctionResponse{
-		Auction: &auction,
+		Auction: aa,
 	}, nil
 }
 
@@ -41,18 +46,22 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 		return &auctiontypes.QueryOwnerAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve owner auctions with address :: %s", ownerAddress))
 	}
 
-	var auctions []*auctiontypes.ReserveAuction
-
+	anyAuctions := make([]*codectypes.Any, 0, len(ownerAuctions.Ids))
 	for _, id := range ownerAuctions.Ids {
 		a, err := qs.k.Auctions.Get(goCtx, id)
 		if err != nil {
 			return &auctiontypes.QueryOwnerAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve owner auctions with address :: %s", ownerAddress))
 		}
-		auctions = append(auctions, &a)
+
+		aa, err := codectypes.NewAnyWithValue(a)
+		if err != nil {
+			return &auctiontypes.QueryOwnerAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve owner auctions with address :: %s", ownerAddress))
+		}
+		anyAuctions = append(anyAuctions, aa)
 	}
 
 	return &auctiontypes.QueryOwnerAuctionsResponse{
-		Auctions: auctions,
+		Auctions: anyAuctions,
 	}, nil
 }
 

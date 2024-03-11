@@ -42,7 +42,9 @@ message QueryOwnerAuctionsRequest {
 }
 
 // QueryOwnerAuctionsResponse is the response type for the Query/OwnerAuctions RPC method.
-message QueryOwnerAuctionsResponse { repeated ReserveAuction auctions = 1; }
+message QueryOwnerAuctionsResponse {
+  repeated google.protobuf.Any auctions = 1 [(cosmos_proto.accepts_interface) = "fatal_fruit.auction.v1.Auction"];
+}
 
 message QueryAllAuctionsRequest {}
 

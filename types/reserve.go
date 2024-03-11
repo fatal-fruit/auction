@@ -8,17 +8,30 @@ import (
 	"time"
 )
 
-var _ Auction = &ReserveAuction{}
-var _ AuctionMetadata = &ReserveAuctionMetadata{}
-var _ AuctionHandler = &ReserveAuctionHandler{}
+var (
+	_ Auction         = &ReserveAuction{}
+	_ AuctionMetadata = &ReserveAuctionMetadata{}
+	_ AuctionHandler  = &ReserveAuctionHandler{}
+)
 
 type ReserveAuctionHandler struct {
 	es EscrowService
 	bk BankKeeper
 }
 
+func NewReserveAuctionHandler(es EscrowService, bk BankKeeper) *ReserveAuctionHandler {
+	return &ReserveAuctionHandler{
+		bk: bk,
+		es: es,
+	}
+}
+
 func (ra *ReserveAuction) GetType() string {
-	return ra.GetType()
+	return ra.AuctionType
+}
+
+func (ra *ReserveAuction) GetAuctionMetadata() AuctionMetadata {
+	return ra.GetMetadata()
 }
 
 func (ra *ReserveAuction) SetOwner(owner sdk.AccAddress) {
@@ -26,11 +39,11 @@ func (ra *ReserveAuction) SetOwner(owner sdk.AccAddress) {
 }
 
 func (ra *ReserveAuction) StartAuction(blockTime time.Time) {
-	end := blockTime.Add(ra.Duration)
+	end := blockTime.Add(ra.Metadata.Duration)
 
 	// Set Start and End time for auction
-	ra.StartTime = blockTime
-	ra.EndTime = end
+	ra.Metadata.StartTime = blockTime
+	ra.Metadata.EndTime = end
 }
 
 // TODO: Implement safer logic to advance status
@@ -40,41 +53,40 @@ func (ra *ReserveAuction) UpdateStatus(newStatus string) {
 
 func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) error {
 	// Validate bid price is over Reserve Price
-	if bidMsg.Bid.IsLT(ra.ReservePrice) {
+	if bidMsg.Bid.IsLT(ra.Metadata.ReservePrice) {
 		return fmt.Errorf("bid lower than reserve price")
 	}
 
 	// Validate auction is active
-	if blockTime.After(ra.EndTime) {
+	if blockTime.After(ra.Metadata.EndTime) {
 		return fmt.Errorf("expired auction")
 	}
 
 	// Validate bid price is competitive
-	if len(ra.Bids) > 0 && bidMsg.Bid.IsLTE(ra.LastPrice) {
+	if len(ra.Metadata.Bids) > 0 && bidMsg.Bid.IsLTE(ra.Metadata.LastPrice) {
 		return fmt.Errorf("bid lower than latest price")
 	}
 
-	ra.Bids = append(ra.Bids, &Bid{
+	ra.Metadata.Bids = append(ra.Metadata.Bids, &Bid{
 		AuctionId: bidMsg.AuctionId,
 		Bidder:    bidMsg.Owner,
 		BidPrice:  bidMsg.Bid,
 		Timestamp: blockTime,
 	})
 
-	ra.LastPrice = bidMsg.Bid
+	ra.Metadata.LastPrice = bidMsg.Bid
 	return nil
 }
 
 func (ra *ReserveAuction) IsExpired(blockTime time.Time) bool {
-	return ra.EndTime.Before(blockTime)
+	return ra.Metadata.EndTime.Before(blockTime)
 }
 
 func (ra *ReserveAuction) HasBids() bool {
-	return len(ra.Bids) > 0
+	return len(ra.Metadata.Bids) > 0
 }
 
 func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, am AuctionMetadata) (Auction, error) {
-	// TODO: derive concrete type from m
 	md, ok := am.(proto.Message)
 	if !ok {
 		return &ReserveAuction{}, fmt.Errorf("%T does not implement proto.Message", md)
@@ -83,24 +95,24 @@ func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, a
 	a := &ReserveAuction{
 		Id:     id,
 		Status: ACTIVE,
-		Bids:   []*Bid{},
+		Metadata: &ReserveAuctionMetadata{
+			Bids: []*Bid{},
+		},
 	}
 
-	switch m := md.(type) {
+	switch m := am.(type) {
 	case *ReserveAuctionMetadata:
-		a.Duration = m.Duration
-		a.ReservePrice = m.ReservePrice
-		a.AuctionType = m.AuctionType
+		a.Metadata.Duration = m.Duration
+		a.Metadata.ReservePrice = m.ReservePrice
 	default:
 		return &ReserveAuction{}, fmt.Errorf("invalid auction metadata", m)
-
 	}
 
 	strategy, err := BuildSettleStrategy(ctx, ah.es, id)
 	if err != nil {
 		return &ReserveAuction{}, fmt.Errorf("error creating escrow contract for auction")
 	}
-	a.Strategy = strategy.ToProto()
+	a.Metadata.Strategy = strategy.ToProto()
 
 	return a, nil
 }
@@ -108,7 +120,7 @@ func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, a
 func (ah *ReserveAuctionHandler) ExecAuction(ctx context.Context, auction Auction) error {
 	switch a := auction.(type) {
 	case *ReserveAuction:
-		es := a.GetStrategy()
+		es := a.Metadata.GetStrategy()
 		err := es.ExecuteStrategy(ctx, a, ah.es, ah.bk)
 		if err != nil {
 			return err
@@ -172,7 +184,7 @@ func BuildSettleStrategy(ctx context.Context, es EscrowService, id uint64) (*Set
 
 func GetWinner(auction *ReserveAuction) (*Bid, error) {
 	var highestBid *Bid
-	for _, b := range auction.Bids {
+	for _, b := range auction.Metadata.Bids {
 		if highestBid.GetBidPrice().IsNil() || b.GetBidPrice().IsGTE(highestBid.GetBidPrice()) {
 			highestBid = b
 		}
