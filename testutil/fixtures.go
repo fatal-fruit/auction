@@ -73,10 +73,10 @@ func InitFixture(t *testing.T) *TestFixture {
 		authority.String(),
 		mockAcctKeeper,
 		mockBankKeeper,
-		resolver,
 		sdk.DefaultBondDenom,
 		log.NewNopLogger(),
 	)
+	k.SetAuctionTypesResolver(resolver)
 	err := k.InitGenesis(testCtx.Ctx, auctiontypes.NewGenesisState())
 	if err != nil {
 		panic(err)

@@ -54,17 +54,17 @@ func (ra *ReserveAuction) UpdateStatus(newStatus string) {
 func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) error {
 	// Validate bid price is over Reserve Price
 	if bidMsg.Bid.IsLT(ra.Metadata.ReservePrice) {
-		return fmt.Errorf("bid lower than reserve price")
+		return fmt.Errorf("bid lower than reserve price :: %s", ra.Metadata.ReservePrice.String())
 	}
 
 	// Validate auction is active
 	if blockTime.After(ra.Metadata.EndTime) {
-		return fmt.Errorf("expired auction")
+		return fmt.Errorf("expired auction :: %s", ra.String())
 	}
 
 	// Validate bid price is competitive
 	if len(ra.Metadata.Bids) > 0 && bidMsg.Bid.IsLTE(ra.Metadata.LastPrice) {
-		return fmt.Errorf("bid lower than latest price")
+		return fmt.Errorf("bid lower than latest price :: %s", ra.Metadata.LastPrice)
 	}
 
 	ra.Metadata.Bids = append(ra.Metadata.Bids, &Bid{
@@ -105,12 +105,12 @@ func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, a
 		a.Metadata.Duration = m.Duration
 		a.Metadata.ReservePrice = m.ReservePrice
 	default:
-		return &ReserveAuction{}, fmt.Errorf("invalid auction metadata", m)
+		return &ReserveAuction{}, fmt.Errorf("invalid auction metadata :: %s", m.String())
 	}
 
 	strategy, err := BuildSettleStrategy(ctx, ah.es, id)
 	if err != nil {
-		return &ReserveAuction{}, fmt.Errorf("error creating escrow contract for auction")
+		return &ReserveAuction{}, fmt.Errorf("error creating escrow contract for auction id :: %d", id)
 	}
 	a.Metadata.Strategy = strategy.ToProto()
 
