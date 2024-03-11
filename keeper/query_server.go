@@ -24,6 +24,7 @@ func (qs queryServer) Auction(goCtx context.Context, r *auctiontypes.QueryAuctio
 	if err != nil {
 		return &auctiontypes.QueryAuctionResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve auction with id :: %d", r.GetId()))
 	}
+	
 	return &auctiontypes.QueryAuctionResponse{
 		Auction: &auction,
 	}, nil
