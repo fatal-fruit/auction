@@ -124,7 +124,6 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNew
 		err = auction.SubmitBid(ctx.BlockTime(), msg)
 		if err != nil {
 			return &at.MsgNewBidResponse{}, err
-
 		}
 
 		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)

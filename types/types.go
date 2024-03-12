@@ -39,7 +39,7 @@ type auctionResolver struct {
 	sealed   bool
 }
 
-// NewRouter creates a new Router interface instance
+// NewResolver creates a new Auction Resolver interface instance
 func NewResolver() AuctionResolver {
 	return &auctionResolver{
 		handlers: make(map[string]AuctionHandler),
@@ -51,8 +51,8 @@ type AuctionHandler interface {
 	ExecAuction(ctx context.Context, a Auction) error
 }
 
-// Seal seals the resolver which prohibits any additionsl route handlers to be
-// added. Seal panics if called more than once.
+// Seal seals the resolver which prohibits any additionsl auction types to be
+// registered. Seal panics if called more than once.
 func (ar *auctionResolver) Seal() {
 	if ar.sealed {
 		panic("resolver already sealed")
@@ -60,8 +60,8 @@ func (ar *auctionResolver) Seal() {
 	ar.sealed = true
 }
 
-// AddRoute adds a governance handler for a given path. It returns the Router
-// so AddRoute calls can be linked. It will panic if the router is sealed.
+// AddType adds an auction type and its handler. It returns the Auction Type Resolver
+// so AddType calls can be chained so long as it has not already been sealed.
 func (ar *auctionResolver) AddType(key string, h AuctionHandler) AuctionResolver {
 	if ar.sealed {
 		panic("resolver sealed; cannot add auction type handler")

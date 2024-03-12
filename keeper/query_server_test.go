@@ -6,7 +6,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/fatal-fruit/auction/keeper"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
@@ -46,7 +45,7 @@ func TestQueryAuction(t *testing.T) {
 			} {
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				contract := &keeper.EscrowModContract{
+				contract := &auctiontestutil.EscrowModContract{
 					Id:      contractId,
 					Address: f.Addrs[2],
 				}
@@ -139,12 +138,12 @@ func TestQueryOwnerAuctions(t *testing.T) {
 			} {
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				contract1 := &keeper.EscrowModContract{
+				contract1 := &auctiontestutil.EscrowModContract{
 					Id:      uint64(0),
 					Address: f.Addrs[2],
 				}
 
-				contract2 := &keeper.EscrowModContract{
+				contract2 := &auctiontestutil.EscrowModContract{
 					Id:      uint64(1),
 					Address: f.Addrs[2],
 				}

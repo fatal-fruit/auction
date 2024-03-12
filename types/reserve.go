@@ -51,6 +51,7 @@ func (ra *ReserveAuction) UpdateStatus(newStatus string) {
 	ra.Status = newStatus
 }
 
+// TODO: Implement logic to transfer funds
 func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) error {
 	// Validate bid price is over Reserve Price
 	if bidMsg.Bid.IsLT(ra.Metadata.ReservePrice) {

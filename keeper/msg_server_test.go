@@ -3,7 +3,6 @@ package keeper_test
 import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/fatal-fruit/auction/keeper"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
@@ -48,7 +47,7 @@ func TestNewAuction(t *testing.T) {
 				contractId := uint64(0)
 				defaultModBalance := sdk.NewInt64Coin(sdk.DefaultBondDenom, 100000)
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
-				contract := &keeper.EscrowModContract{
+				contract := &auctiontestutil.EscrowModContract{
 					Id:      contractId,
 					Address: f.Addrs[2],
 				}
@@ -137,7 +136,7 @@ func TestNewBid(t *testing.T) {
 			} {
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				contract := &keeper.EscrowModContract{
+				contract := &auctiontestutil.EscrowModContract{
 					Id:      contractId,
 					Address: f.Addrs[2],
 				}
@@ -186,7 +185,7 @@ func TestNewBid(t *testing.T) {
 				contractId++
 				defaultDep := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000)
 
-				contract := &keeper.EscrowModContract{
+				contract := &auctiontestutil.EscrowModContract{
 					Id:      contractId,
 					Address: f.Addrs[2],
 				}
