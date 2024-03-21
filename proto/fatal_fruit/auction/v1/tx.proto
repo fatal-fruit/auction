@@ -91,12 +91,14 @@ message MsgNewBid {
   uint64 auction_id = 2;
 
   // bid is the amount of the bid.
-  cosmos.base.v1beta1.Coin bid = 3 [
+  cosmos.base.v1beta1.Coin bid_amount = 3 [
     (gogoproto.nullable)     = false,
     (amino.dont_omitempty)   = true,
     (amino.encoding)         = "legacy_coins",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
+
+  google.protobuf.Any data = 4 [(cosmos_proto.accepts_interface) = "fatal_fruit.auction.v1.BidMetadata"];
 }
 
 // MsgNewBidResponse defines the response for a successful bid placement.

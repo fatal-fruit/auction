@@ -30,6 +30,17 @@ func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sd
 	return auction, nil
 }
 
+func (k *Keeper) SubmitBid(ctx context.Context, auctionType string, auction auctiontypes.Auction, bidMessage *auctiontypes.MsgNewBid) (auctiontypes.Auction, error) {
+	// Message server should not have been able to call SubmitBit without an existing handler
+	if !k.resolver.HasType(auctionType) {
+		return nil, fmt.Errorf("auction type %s is not registered", auctionType)
+	}
+
+	handler := k.resolver.GetHandler(auctionType)
+
+	return handler.SubmitBid(ctx, auction, bidMessage)
+}
+
 func (k *Keeper) ExecuteAuction(ctx context.Context, auction auctiontypes.Auction) error {
 	if !k.resolver.HasType(auction.GetType()) {
 		return fmt.Errorf("auction type %s is not registered", auction.GetType())

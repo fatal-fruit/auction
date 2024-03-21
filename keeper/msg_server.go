@@ -91,6 +91,7 @@ func (ms msgServer) StartAuction(goCtx context.Context, msg *at.MsgStartAuction)
 	}
 
 	// Generate start/end time
+	// TODO: Pass context instead
 	auction.StartAuction(ctx.BlockTime())
 
 	// Save updated auction
@@ -121,9 +122,9 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNew
 			return &at.MsgNewBidResponse{}, err
 		}
 
-		err = auction.SubmitBid(ctx.BlockTime(), msg)
+		auction, err = ms.k.SubmitBid(ctx, auction.GetType(), auction, msg)
 		if err != nil {
-			return &at.MsgNewBidResponse{}, err
+			return &at.MsgNewBidResponse{}, fmt.Errorf("error creating auction")
 		}
 
 		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)

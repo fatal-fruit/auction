@@ -27,6 +27,10 @@ type AuctionMetadata interface {
 	proto.Message
 }
 
+type BidMetadata interface {
+	proto.Message
+}
+
 type AuctionResolver interface {
 	AddType(key string, h AuctionHandler) (rsv AuctionResolver)
 	HasType(key string) bool
@@ -48,6 +52,7 @@ func NewResolver() AuctionResolver {
 
 type AuctionHandler interface {
 	CreateAuction(ctx context.Context, id uint64, metadata AuctionMetadata) (Auction, error)
+	SubmitBid(ctx context.Context, auction Auction, bidMsg *MsgNewBid) (Auction, error)
 	ExecAuction(ctx context.Context, a Auction) error
 }
 

@@ -57,3 +57,7 @@ lint-fix:
 	@$(golangci_lint_cmd) run ./... --fix --timeout 15m
 
 .PHONY: lint lint-fix
+
+generate-mocks:
+	mockgen --source=./types/expected_keepers.go --destination=./testutil/expected_keepers_mocks.go --package=testutil
+	mockgen --source=./types/expected_services.go --destination=./testutil/expected_services_mocks.go --package=testutil

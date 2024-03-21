@@ -66,6 +66,8 @@ func InitFixture(t *testing.T) *TestFixture {
 	resolver.AddType(reserveType, handler)
 	resolver.Seal()
 
+	resolver.AddType(sdk.MsgTypeURL(&auctiontypes.ReserveAuction{}), handler)
+
 	k := keeper.NewKeeper(
 		encConfig.Codec,
 		addresscodec.NewBech32Codec("cosmos"),
