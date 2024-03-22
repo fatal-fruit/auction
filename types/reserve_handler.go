@@ -28,8 +28,9 @@ func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, a
 	}
 
 	a := &ReserveAuction{
-		Id:     id,
-		Status: ACTIVE,
+		Id:          id,
+		Status:      ACTIVE,
+		AuctionType: sdk.MsgTypeURL(&ReserveAuction{}),
 		Metadata: &ReserveAuctionMetadata{
 			Bids: []*Bid{},
 		},

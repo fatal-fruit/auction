@@ -21,8 +21,6 @@ func TestNewAuction(t *testing.T) {
 	anyMd, err := codectypes.NewAnyWithValue(&metadata)
 	require.NoError(err)
 
-	//auctionType := sdk.MsgTypeURL(&auctiontypes.ReserveAuction{})
-
 	testCases := []struct {
 		name      string
 		req       auctiontypes.MsgNewAuction
@@ -142,7 +140,7 @@ func TestNewBid(t *testing.T) {
 				}
 				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
-
+				tf.MockBankKeeper.EXPECT().SendCoins(tf.Ctx, f.Addrs[1], f.Addrs[2], sdk.NewCoins(sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100)))
 				metadata := auctiontypes.ReserveAuctionMetadata{
 					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					Duration:     time.Duration(30) * time.Second,

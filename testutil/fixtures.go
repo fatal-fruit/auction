@@ -62,11 +62,8 @@ func InitFixture(t *testing.T) *TestFixture {
 
 	resolver := auctiontypes.NewResolver()
 	handler := auctiontypes.NewReserveAuctionHandler(mockEscrowService, mockBankKeeper)
-	reserveType := sdk.MsgTypeURL(&auctiontypes.ReserveAuction{})
-	resolver.AddType(reserveType, handler)
-	resolver.Seal()
-
 	resolver.AddType(sdk.MsgTypeURL(&auctiontypes.ReserveAuction{}), handler)
+	resolver.Seal()
 
 	k := keeper.NewKeeper(
 		encConfig.Codec,
