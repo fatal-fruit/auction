@@ -67,13 +67,20 @@ func (qs queryServer) OwnerAuctions(goCtx context.Context, r *auctiontypes.Query
 
 func (qs queryServer) AllAuctions(ctx context.Context, _ *auctiontypes.QueryAllAuctionsRequest) (*auctiontypes.QueryAllAuctionsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	auctions := qs.k.GetAllAuctions(sdkCtx)
-
-	// Convert to slice of pointers
-	auctionsPtrs := make([]*auctiontypes.ReserveAuction, len(auctions))
-	for i, auction := range auctions {
-		auctionsPtrs[i] = &auction
+	auctions, err := qs.k.GetAllAuctions(sdkCtx)
+	if err != nil {
+		return &auctiontypes.QueryAllAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("error retrieving all auctions %v", err))
 	}
 
-	return &auctiontypes.QueryAllAuctionsResponse{Auctions: auctionsPtrs}, nil
+	auctionRes := make([]*codectypes.Any, len(auctions))
+	for _, a := range auctions {
+
+		aa, err := codectypes.NewAnyWithValue(a)
+		if err != nil {
+			return &auctiontypes.QueryAllAuctionsResponse{}, fmt.Errorf(fmt.Sprintf("unable to retrieve auction with id :: %d", a.GetId()))
+		}
+		auctionRes = append(auctionRes, aa)
+	}
+
+	return &auctiontypes.QueryAllAuctionsResponse{Auctions: auctionRes}, nil
 }

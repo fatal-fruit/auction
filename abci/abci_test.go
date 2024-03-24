@@ -3,6 +3,7 @@ package abci
 import (
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
@@ -16,17 +17,17 @@ func TestEndBlocker_ActiveToCancelled(t *testing.T) {
 
 	id, err := f.K.IDs.Next(f.Ctx)
 	require.NoError(err)
-	auction := auctiontypes.ReserveAuction{
+	auction := at.ReserveAuction{
 		Id:          id,
 		Status:      auctiontypes.ACTIVE,
 		Owner:       f.Addrs[0].String(),
 		AuctionType: f.ReserveAuctionType,
-		Metadata: &auctiontypes.ReserveAuctionMetadata{
+		Metadata: &at.ReserveAuctionMetadata{
 			ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 			StartTime:    time.Now().Add(-30 * time.Second),
 			EndTime:      time.Now().Add(-1 * time.Second),
 			Bids:         []*auctiontypes.Bid{},
-			Strategy: &auctiontypes.SettleStrategy{
+			Strategy: &at.SettleStrategy{
 				StrategyType:          auctiontypes.SETTLE,
 				EscrowContractId:      1,
 				EscrowContractAddress: f.Addrs[2].String(),
@@ -65,12 +66,12 @@ func TestEndBlocker_ActiveToPending(t *testing.T) {
 
 	id, err := f.K.IDs.Next(f.Ctx)
 	require.NoError(err)
-	auction := auctiontypes.ReserveAuction{
+	auction := at.ReserveAuction{
 		Id:          id,
 		Status:      auctiontypes.ACTIVE,
 		Owner:       f.Addrs[0].String(),
 		AuctionType: f.ReserveAuctionType,
-		Metadata: &auctiontypes.ReserveAuctionMetadata{
+		Metadata: &at.ReserveAuctionMetadata{
 			ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 			StartTime:    time.Now().Add(-30 * time.Second),
 			EndTime:      time.Now().Add(-1 * time.Second),
@@ -83,7 +84,7 @@ func TestEndBlocker_ActiveToPending(t *testing.T) {
 					Timestamp: time.Now(),
 				},
 			},
-			Strategy: &auctiontypes.SettleStrategy{
+			Strategy: &at.SettleStrategy{
 				StrategyType:          auctiontypes.SETTLE,
 				EscrowContractId:      1,
 				EscrowContractAddress: f.Addrs[2].String(),

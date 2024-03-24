@@ -12,6 +12,7 @@ import (
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -23,12 +24,12 @@ func TestCreateAuction(t *testing.T) {
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.AuctionMetadata",
 		(*auctiontypes.AuctionMetadata)(nil),
-		&auctiontypes.ReserveAuctionMetadata{},
+		&at.ReserveAuctionMetadata{},
 	)
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.Auction",
 		(*auctiontypes.Auction)(nil),
-		&auctiontypes.ReserveAuction{},
+		&at.ReserveAuction{},
 	)
 	kr := keyring.NewInMemory(encConfig.Codec)
 	baseContext := client.Context{}.

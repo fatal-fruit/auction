@@ -1,22 +1,23 @@
-package types
+package auctiontypes
 
 import (
 	"context"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/fatal-fruit/auction/types"
 	"time"
 )
 
 var (
-	_ Auction         = &ReserveAuction{}
-	_ AuctionMetadata = &ReserveAuctionMetadata{}
+	_ types.Auction         = &ReserveAuction{}
+	_ types.AuctionMetadata = &ReserveAuctionMetadata{}
 )
 
 func (ra *ReserveAuction) GetType() string {
 	return ra.AuctionType
 }
 
-func (ra *ReserveAuction) GetAuctionMetadata() AuctionMetadata {
+func (ra *ReserveAuction) GetAuctionMetadata() types.AuctionMetadata {
 	return ra.GetMetadata()
 }
 
@@ -41,7 +42,7 @@ func (ra *ReserveAuction) StartAuction(blockTime time.Time) {
 }
 
 // TODO: Implement logic to transfer funds
-func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) error {
+func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *types.MsgNewBid) error {
 	// Validate bid price is over Reserve Price
 	if bidMsg.BidAmount.IsLT(ra.Metadata.ReservePrice) {
 		return fmt.Errorf("bid lower than reserve price :: %s", ra.Metadata.ReservePrice.String())
@@ -57,7 +58,7 @@ func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) erro
 		return fmt.Errorf("bid lower than latest price :: %s", ra.Metadata.LastPrice)
 	}
 
-	ra.Metadata.Bids = append(ra.Metadata.Bids, &Bid{
+	ra.Metadata.Bids = append(ra.Metadata.Bids, &types.Bid{
 		AuctionId: bidMsg.AuctionId,
 		Bidder:    bidMsg.Owner,
 		BidPrice:  bidMsg.BidAmount,
@@ -74,24 +75,24 @@ func (ra *ReserveAuction) UpdateStatus(newStatus string) {
 }
 
 type Strategy interface {
-	UpdateBid(ctx context.Context, bid Bid, service EscrowService, keeper BankKeeper) error
-	ExecuteStrategy(context.Context, ReserveAuction, EscrowService, BankKeeper) error
+	UpdateBid(ctx context.Context, bid types.Bid, service types.EscrowService, keeper types.BankKeeper) error
+	ExecuteStrategy(context.Context, ReserveAuction, types.EscrowService, types.BankKeeper) error
 }
 
-func NewSettleStrategy(ctx context.Context, es EscrowService, id uint64) (*SettleStrategy, error) {
+func NewSettleStrategy(ctx context.Context, es types.EscrowService, id uint64) (*SettleStrategy, error) {
 	contract, err := es.NewContract(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create escrow contract")
 	}
 	s := &SettleStrategy{
-		StrategyType:          SETTLE,
+		StrategyType:          types.SETTLE,
 		EscrowContractId:      contract.GetId(),
 		EscrowContractAddress: contract.GetAddress().String(),
 	}
 	return s, nil
 }
 
-func (s *SettleStrategy) ExecuteStrategy(ctx context.Context, auction *ReserveAuction, es EscrowService, bk BankKeeper) error {
+func (s *SettleStrategy) ExecuteStrategy(ctx context.Context, auction *ReserveAuction, es types.EscrowService, bk types.BankKeeper) error {
 	// Select Winner
 	winningBid, err := s.GetWinner(auction)
 	if err != nil {
@@ -116,7 +117,7 @@ func (s *SettleStrategy) ExecuteStrategy(ctx context.Context, auction *ReserveAu
 	return nil
 }
 
-func (s *SettleStrategy) SubmitBid(ctx context.Context, bid *MsgNewBid, bk BankKeeper) error {
+func (s *SettleStrategy) SubmitBid(ctx context.Context, bid *types.MsgNewBid, bk types.BankKeeper) error {
 	// Handle funds
 	bidder := sdk.MustAccAddressFromBech32(bid.GetOwner())
 	amt := bid.GetBidAmount()
@@ -126,8 +127,8 @@ func (s *SettleStrategy) SubmitBid(ctx context.Context, bid *MsgNewBid, bk BankK
 	return bk.SendCoins(ctx, bidder, escrowAddr, sdk.Coins{amt})
 }
 
-func (s *SettleStrategy) GetWinner(auction *ReserveAuction) (*Bid, error) {
-	var highestBid *Bid
+func (s *SettleStrategy) GetWinner(auction *ReserveAuction) (*types.Bid, error) {
+	var highestBid *types.Bid
 	for _, b := range auction.Metadata.Bids {
 		if highestBid.GetBidPrice().IsNil() || b.GetBidPrice().IsGTE(highestBid.GetBidPrice()) {
 			highestBid = b

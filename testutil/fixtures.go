@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	"github.com/fatal-fruit/auction/keeper"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"go.uber.org/mock/gomock"
@@ -40,12 +41,12 @@ func InitFixture(t *testing.T) *TestFixture {
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.AuctionMetadata",
 		(*auctiontypes.AuctionMetadata)(nil),
-		&auctiontypes.ReserveAuctionMetadata{},
+		&at.ReserveAuctionMetadata{},
 	)
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.Auction",
 		(*auctiontypes.Auction)(nil),
-		&auctiontypes.ReserveAuction{},
+		&at.ReserveAuction{},
 	)
 	storeKey := storetypes.NewKVStoreKey(auctiontypes.ModuleName)
 	testCtx := testutil.DefaultContextWithDB(t, storeKey, storetypes.NewTransientStoreKey("t_test"))
@@ -61,8 +62,8 @@ func InitFixture(t *testing.T) *TestFixture {
 	mockEscrowService := NewMockEscrowService(ctrl)
 
 	resolver := auctiontypes.NewResolver()
-	handler := auctiontypes.NewReserveAuctionHandler(mockEscrowService, mockBankKeeper)
-	resolver.AddType(sdk.MsgTypeURL(&auctiontypes.ReserveAuction{}), handler)
+	handler := at.NewReserveAuctionHandler(mockEscrowService, mockBankKeeper)
+	resolver.AddType(sdk.MsgTypeURL(&at.ReserveAuction{}), handler)
 	resolver.Seal()
 
 	k := keeper.NewKeeper(
@@ -94,6 +95,6 @@ func InitFixture(t *testing.T) *TestFixture {
 		MockBankKeeper:     mockBankKeeper,
 		MockEscrowService:  mockEscrowService,
 		Resolver:           resolver,
-		ReserveAuctionType: sdk.MsgTypeURL(&auctiontypes.ReserveAuction{}),
+		ReserveAuctionType: sdk.MsgTypeURL(&at.ReserveAuction{}),
 	}
 }

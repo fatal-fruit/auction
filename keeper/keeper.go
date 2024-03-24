@@ -295,7 +295,7 @@ func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
 	return nil
 }
 
-func (k *Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
+func (k *Keeper) GetAllAuctions(ctx sdk.Context) ([]auctiontypes.Auction, error) {
 	//var auctions []auctiontypes.ReserveAuction
 	//
 	//err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
@@ -307,5 +307,5 @@ func (k *Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
 	//}
 	//
 	//return auctions
-	return nil
+	return nil, nil
 }

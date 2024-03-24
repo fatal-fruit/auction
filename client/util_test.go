@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -15,12 +16,12 @@ func TestParseAuctionType(t *testing.T) {
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.AuctionMetadata",
 		(*auctiontypes.AuctionMetadata)(nil),
-		&auctiontypes.ReserveAuctionMetadata{},
+		&at.ReserveAuctionMetadata{},
 	)
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.Auction",
 		(*auctiontypes.Auction)(nil),
-		&auctiontypes.ReserveAuction{},
+		&at.ReserveAuction{},
 	)
 	cdc := encConfig.Codec
 	auctionType := "/fatal_fruit.auction.v1.ReserveAuction"
@@ -35,12 +36,12 @@ func TestParseMetadata(t *testing.T) {
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.AuctionMetadata",
 		(*auctiontypes.AuctionMetadata)(nil),
-		&auctiontypes.ReserveAuctionMetadata{},
+		&at.ReserveAuctionMetadata{},
 	)
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.Auction",
 		(*auctiontypes.Auction)(nil),
-		&auctiontypes.ReserveAuction{},
+		&at.ReserveAuction{},
 	)
 	cdc := encConfig.Codec
 	md := `{
@@ -55,7 +56,7 @@ func TestParseMetadata(t *testing.T) {
 	mdFile := testutil.WriteToNewTempFile(t, md)
 	defer mdFile.Close()
 
-	expMsg := &auctiontypes.ReserveAuctionMetadata{
+	expMsg := &at.ReserveAuctionMetadata{
 		Duration:     time.Duration(1000000000000),
 		ReservePrice: sdk.NewInt64Coin("stake", int64(250)),
 	}

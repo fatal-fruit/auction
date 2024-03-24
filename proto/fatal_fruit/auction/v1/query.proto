@@ -48,4 +48,4 @@ message QueryOwnerAuctionsResponse {
 
 message QueryAllAuctionsRequest {}
 
-message QueryAllAuctionsResponse { repeated ReserveAuction auctions = 1; }
+message QueryAllAuctionsResponse { repeated google.protobuf.Any auctions = 1 [(cosmos_proto.accepts_interface) = "fatal_fruit.auction.v1.Auction"]; }

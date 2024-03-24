@@ -1,27 +1,28 @@
-package types
+package auctiontypes
 
 import (
 	"context"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
+	"github.com/fatal-fruit/auction/types"
 )
 
-var _ AuctionHandler = &ReserveAuctionHandler{}
+var _ types.AuctionHandler = &ReserveAuctionHandler{}
 
 type ReserveAuctionHandler struct {
-	es EscrowService
-	bk BankKeeper
+	es types.EscrowService
+	bk types.BankKeeper
 }
 
-func NewReserveAuctionHandler(es EscrowService, bk BankKeeper) *ReserveAuctionHandler {
+func NewReserveAuctionHandler(es types.EscrowService, bk types.BankKeeper) *ReserveAuctionHandler {
 	return &ReserveAuctionHandler{
 		bk: bk,
 		es: es,
 	}
 }
 
-func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, am AuctionMetadata) (Auction, error) {
+func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, am types.AuctionMetadata) (types.Auction, error) {
 	md, ok := am.(proto.Message)
 	if !ok {
 		return &ReserveAuction{}, fmt.Errorf("%T does not implement proto.Message", md)
@@ -29,10 +30,10 @@ func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, a
 
 	a := &ReserveAuction{
 		Id:          id,
-		Status:      ACTIVE,
+		Status:      types.ACTIVE,
 		AuctionType: sdk.MsgTypeURL(&ReserveAuction{}),
 		Metadata: &ReserveAuctionMetadata{
-			Bids: []*Bid{},
+			Bids: []*types.Bid{},
 		},
 	}
 
@@ -53,7 +54,7 @@ func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, a
 	return a, nil
 }
 
-func (ah *ReserveAuctionHandler) SubmitBid(ctx context.Context, auction Auction, bidMsg *MsgNewBid) (Auction, error) {
+func (ah *ReserveAuctionHandler) SubmitBid(ctx context.Context, auction types.Auction, bidMsg *types.MsgNewBid) (types.Auction, error) {
 	// Update auction with bid logic
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	err := auction.SubmitBid(sdkCtx.BlockTime(), bidMsg)
@@ -77,7 +78,7 @@ func (ah *ReserveAuctionHandler) SubmitBid(ctx context.Context, auction Auction,
 	return auction, nil
 }
 
-func (ah *ReserveAuctionHandler) ExecAuction(ctx context.Context, auction Auction) error {
+func (ah *ReserveAuctionHandler) ExecAuction(ctx context.Context, auction types.Auction) error {
 	switch a := auction.(type) {
 	case *ReserveAuction:
 		es := a.Metadata.GetStrategy()

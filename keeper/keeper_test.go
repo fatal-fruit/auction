@@ -5,6 +5,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
@@ -16,12 +17,12 @@ func TestProcessActiveAuctions(t *testing.T) {
 
 	id, err := f.K.IDs.Next(f.Ctx)
 	require.NoError(err)
-	auction := auctiontypes.ReserveAuction{
+	auction := at.ReserveAuction{
 		Id:          id,
 		Status:      auctiontypes.ACTIVE,
 		Owner:       f.Addrs[0].String(),
 		AuctionType: f.ReserveAuctionType,
-		Metadata: &auctiontypes.ReserveAuctionMetadata{
+		Metadata: &at.ReserveAuctionMetadata{
 			ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 			StartTime:    time.Now().Add(-30 * time.Second),
 			EndTime:      time.Now().Add(-1 * time.Second),
@@ -53,13 +54,13 @@ func TestProcessExpiredAuctions(t *testing.T) {
 	id2, err := f.K.IDs.Next(f.Ctx)
 	require.NoError(err)
 
-	auctions := []auctiontypes.ReserveAuction{
+	auctions := []at.ReserveAuction{
 		{
 			Id:          id1,
 			Status:      auctiontypes.ACTIVE,
 			Owner:       f.Addrs[0].String(),
 			AuctionType: f.ReserveAuctionType,
-			Metadata: &auctiontypes.ReserveAuctionMetadata{
+			Metadata: &at.ReserveAuctionMetadata{
 				ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 				StartTime:    time.Now().Add(-30 * time.Second),
 				EndTime:      time.Now().Add(-1 * time.Second),
@@ -79,7 +80,7 @@ func TestProcessExpiredAuctions(t *testing.T) {
 			Status:      auctiontypes.ACTIVE,
 			Owner:       f.Addrs[0].String(),
 			AuctionType: f.ReserveAuctionType,
-			Metadata: &auctiontypes.ReserveAuctionMetadata{
+			Metadata: &at.ReserveAuctionMetadata{
 				ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 				StartTime:    time.Now().Add(-30 * time.Second),
 				EndTime:      time.Now().Add(-1 * time.Second),
@@ -130,13 +131,13 @@ func TestGetAllAuctions(t *testing.T) {
 	id2, err := f.K.IDs.Next(f.Ctx)
 	require.NoError(err)
 
-	auctions := []auctiontypes.ReserveAuction{
+	auctions := []at.ReserveAuction{
 		{
 			Id:          id1,
 			Status:      auctiontypes.ACTIVE,
 			Owner:       f.Addrs[0].String(),
 			AuctionType: f.ReserveAuctionType,
-			Metadata: &auctiontypes.ReserveAuctionMetadata{
+			Metadata: &at.ReserveAuctionMetadata{
 				ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 				StartTime:    time.Now().Add(-30 * time.Second),
 				EndTime:      time.Now().Add(-1 * time.Second),
@@ -156,7 +157,7 @@ func TestGetAllAuctions(t *testing.T) {
 			Status:      auctiontypes.ACTIVE,
 			Owner:       f.Addrs[0].String(),
 			AuctionType: f.ReserveAuctionType,
-			Metadata: &auctiontypes.ReserveAuctionMetadata{
+			Metadata: &at.ReserveAuctionMetadata{
 				ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 				StartTime:    time.Now().Add(-30 * time.Second),
 				EndTime:      time.Now().Add(-1 * time.Second),
@@ -172,8 +173,8 @@ func TestGetAllAuctions(t *testing.T) {
 		require.NoError(err)
 	}
 
-	auctions = f.K.GetAllAuctions(f.Ctx)
-	require.Equal(2, len(auctions))
+	res, err := f.K.GetAllAuctions(f.Ctx)
+	require.Equal(len(res), len(auctions))
 }
 
 func TestPurgeCancelledAuctions(t *testing.T) {
@@ -197,21 +198,21 @@ func TestPurgeCancelledAuctions(t *testing.T) {
 }
 
 func TestGetCancelledAuctions(t *testing.T) {
-	// TODO: Fix
+	// TODO: Fix with auction interface implementation
 	t.Skip()
-	f := auctiontestutil.InitFixture(t)
-	require := require.New(t)
-
-	numAuctions := 3
-	for i := 0; i < numAuctions; i++ {
-		id, err := f.K.IDs.Next(f.Ctx)
-		require.NoError(err)
-
-		auction := auctiontypes.ReserveAuction{Id: id}
-		err = f.K.Auctions.Set(f.Ctx, id, &auction)
-		require.NoError(err)
-
-		err = f.K.CancelAuction(f.Ctx, id)
-		require.NoError(err)
-	}
+	//f := auctiontestutil.InitFixture(t)
+	//require := require.New(t)
+	//
+	//numAuctions := 3
+	//for i := 0; i < numAuctions; i++ {
+	//	id, err := f.K.IDs.Next(f.Ctx)
+	//	require.NoError(err)
+	//
+	//	auction := at.ReserveAuction{Id: id}
+	//	err = f.K.Auctions.Set(f.Ctx, id, &auction)
+	//	require.NoError(err)
+	//
+	//	err = f.K.CancelAuction(f.Ctx, id)
+	//	require.NoError(err)
+	//}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ func TestQueryAuction(t *testing.T) {
 	require := require.New(t)
 	contractId := uint64(0)
 
-	metadata := auctiontypes.ReserveAuctionMetadata{
+	metadata := at.ReserveAuctionMetadata{
 		ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 		Duration:     time.Duration(30) * time.Second,
 	}
@@ -92,7 +93,7 @@ func TestQueryAuction(t *testing.T) {
 				require.NoError(err)
 
 				switch r := act.(type) {
-				case *auctiontypes.ReserveAuction:
+				case *at.ReserveAuction:
 					require.EqualValues(r.Id, auction.GetId())
 					require.EqualValues(r.GetType(), auction.GetType())
 				default:
@@ -108,7 +109,7 @@ func TestQueryOwnerAuctions(t *testing.T) {
 	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
-	metadata := auctiontypes.ReserveAuctionMetadata{
+	metadata := at.ReserveAuctionMetadata{
 		ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 		Duration:     time.Duration(30) * time.Second,
 	}
@@ -159,7 +160,7 @@ func TestQueryOwnerAuctions(t *testing.T) {
 					AuctionMetadata: anyMd,
 				}
 
-				metadata2 := auctiontypes.ReserveAuctionMetadata{
+				metadata2 := at.ReserveAuctionMetadata{
 					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 5000),
 					Duration:     time.Duration(20) * time.Second,
 				}
@@ -222,7 +223,7 @@ func TestQueryGetAllAuctions(t *testing.T) {
 		Return(nil).
 		AnyTimes()
 
-	auctions := []auctiontypes.ReserveAuction{
+	auctions := []at.ReserveAuction{
 		{Id: 1, Owner: f.Addrs[0].String()},
 		{Id: 2, Owner: f.Addrs[1].String()},
 	}

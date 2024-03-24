@@ -3,6 +3,7 @@ package keeper_test
 import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontestutil "github.com/fatal-fruit/auction/testutil"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ func TestNewAuction(t *testing.T) {
 	f := auctiontestutil.InitFixture(t)
 	require := require.New(t)
 
-	metadata := auctiontypes.ReserveAuctionMetadata{
+	metadata := at.ReserveAuctionMetadata{
 		ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 		Duration:     time.Duration(30) * time.Second,
 	}
@@ -24,7 +25,7 @@ func TestNewAuction(t *testing.T) {
 	testCases := []struct {
 		name      string
 		req       auctiontypes.MsgNewAuction
-		metadata  auctiontypes.ReserveAuctionMetadata
+		metadata  at.ReserveAuctionMetadata
 		expErr    bool
 		setupTest func(fixture *auctiontestutil.TestFixture) struct {
 			contractId uint64
@@ -86,7 +87,7 @@ func TestNewAuction(t *testing.T) {
 				a := auction.GetAuctionMetadata()
 
 				switch resMd := a.(type) {
-				case *auctiontypes.ReserveAuctionMetadata:
+				case *at.ReserveAuctionMetadata:
 					require.Equal(tc.metadata.Duration, resMd.Duration)
 					require.Equal(tc.metadata.ReservePrice, resMd.ReservePrice)
 				default:
@@ -94,7 +95,7 @@ func TestNewAuction(t *testing.T) {
 				}
 
 				switch act := auction.(type) {
-				case *auctiontypes.ReserveAuction:
+				case *at.ReserveAuction:
 					require.Equal(expValues.contractId, act.Metadata.Strategy.EscrowContractId)
 					require.Equal(tc.req.Owner, act.Owner)
 					require.Equal(len(act.Metadata.Bids), 0)
@@ -141,7 +142,7 @@ func TestNewBid(t *testing.T) {
 				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
 				tf.MockBankKeeper.EXPECT().SendCoins(tf.Ctx, f.Addrs[1], f.Addrs[2], sdk.NewCoins(sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1100)))
-				metadata := auctiontypes.ReserveAuctionMetadata{
+				metadata := at.ReserveAuctionMetadata{
 					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					Duration:     time.Duration(30) * time.Second,
 				}
@@ -190,7 +191,7 @@ func TestNewBid(t *testing.T) {
 				tf.MockEscrowService.EXPECT().NewContract(tf.Ctx, contractId).Return(contract, nil).AnyTimes()
 				tf.MockBankKeeper.EXPECT().SendCoinsFromAccountToModule(tf.Ctx, tf.Addrs[0], auctiontypes.ModuleName, sdk.NewCoins(defaultDep)).Times(1)
 
-				metadata := auctiontypes.ReserveAuctionMetadata{
+				metadata := at.ReserveAuctionMetadata{
 					ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 					Duration:     time.Duration(30) * time.Second,
 				}
@@ -225,17 +226,17 @@ func TestNewBid(t *testing.T) {
 				contractId++
 				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
-				auction := auctiontypes.ReserveAuction{
+				auction := at.ReserveAuction{
 					Id:          id,
 					Status:      auctiontypes.ACTIVE,
 					Owner:       f.Addrs[0].String(),
 					AuctionType: f.ReserveAuctionType,
-					Metadata: &auctiontypes.ReserveAuctionMetadata{
+					Metadata: &at.ReserveAuctionMetadata{
 						ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 						StartTime:    time.Now().Add(-30 * time.Second),
 						EndTime:      time.Now().Add(-1 * time.Second),
 						Bids:         []*auctiontypes.Bid{},
-						Strategy: &auctiontypes.SettleStrategy{
+						Strategy: &at.SettleStrategy{
 							StrategyType:          auctiontypes.SETTLE,
 							EscrowContractId:      contractId,
 							EscrowContractAddress: f.Addrs[2].String(),
@@ -266,12 +267,12 @@ func TestNewBid(t *testing.T) {
 				contractId++
 				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
-				auction := auctiontypes.ReserveAuction{
+				auction := at.ReserveAuction{
 					Id:          id,
 					Status:      auctiontypes.ACTIVE,
 					Owner:       f.Addrs[0].String(),
 					AuctionType: f.ReserveAuctionType,
-					Metadata: &auctiontypes.ReserveAuctionMetadata{
+					Metadata: &at.ReserveAuctionMetadata{
 						ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 						StartTime:    time.Now(),
 						EndTime:      time.Now().Add(30 * time.Second),
@@ -284,7 +285,7 @@ func TestNewBid(t *testing.T) {
 								Timestamp: time.Now(),
 							},
 						},
-						Strategy: &auctiontypes.SettleStrategy{
+						Strategy: &at.SettleStrategy{
 							StrategyType:          auctiontypes.SETTLE,
 							EscrowContractId:      contractId,
 							EscrowContractAddress: f.Addrs[2].String(),
@@ -322,7 +323,7 @@ func TestNewBid(t *testing.T) {
 				require.NoError(err)
 
 				switch act := auction.(type) {
-				case *auctiontypes.ReserveAuction:
+				case *at.ReserveAuction:
 					bd := act.Metadata.GetBids()[0]
 					require.Equal(bd.BidPrice, tc.bid)
 					require.Equal(bd.AuctionId, msgRes.contractId)
@@ -358,12 +359,12 @@ func TestExecAuction(t *testing.T) {
 			} {
 				id, err := f.K.IDs.Next(f.Ctx)
 				require.NoError(err)
-				auction := auctiontypes.ReserveAuction{
+				auction := at.ReserveAuction{
 					Id:          id,
 					Status:      auctiontypes.ACTIVE,
 					Owner:       f.Addrs[0].String(),
 					AuctionType: f.ReserveAuctionType,
-					Metadata: &auctiontypes.ReserveAuctionMetadata{
+					Metadata: &at.ReserveAuctionMetadata{
 						ReservePrice: sdk.NewInt64Coin(f.K.GetDefaultDenom(), 1000),
 						StartTime:    time.Now().Add(-30 * time.Second),
 						EndTime:      time.Now().Add(-1 * time.Second),
@@ -376,7 +377,7 @@ func TestExecAuction(t *testing.T) {
 								Timestamp: time.Now(),
 							},
 						},
-						Strategy: &auctiontypes.SettleStrategy{
+						Strategy: &at.SettleStrategy{
 							StrategyType:          auctiontypes.SETTLE,
 							EscrowContractId:      uint64(1),
 							EscrowContractAddress: f.Addrs[2].String(),
@@ -420,7 +421,7 @@ func TestExecAuction(t *testing.T) {
 
 				auction, err := f.K.Auctions.Get(f.Ctx, msgRes.auctionId)
 				switch act := auction.(type) {
-				case *auctiontypes.ReserveAuction:
+				case *at.ReserveAuction:
 					require.Equal(act.Status, auctiontypes.CLOSED)
 				default:
 					t.Errorf("invalid auction type")

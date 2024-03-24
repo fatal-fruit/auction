@@ -25,15 +25,4 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
-
-	registry.RegisterInterface(
-		"fatal_fruit.auction.v1.AuctionMetadata",
-		(*AuctionMetadata)(nil),
-		&ReserveAuctionMetadata{},
-	)
-	registry.RegisterInterface(
-		"fatal_fruit.auction.v1.Auction",
-		(*Auction)(nil),
-		&ReserveAuction{},
-	)
 }
