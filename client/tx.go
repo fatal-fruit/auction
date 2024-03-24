@@ -88,7 +88,7 @@ func NewAuctionCmd() *cobra.Command {
 func StartAuctionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start-auction [auction-id] --from [sender]",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(1),
 		Short: "start auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
 			$ %s tx %s start-auction <auction-id> --from <sender> --chain-id <chain-id>`,
