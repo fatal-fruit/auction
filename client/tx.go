@@ -84,6 +84,45 @@ func NewAuctionCmd() *cobra.Command {
 	return cmd
 }
 
+// StartAuctionCmd creates a CLI command for MsgStartAuction.
+func StartAuctionCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start-auction [auction-id] --from [sender]",
+		Args:  cobra.ExactArgs(3),
+		Short: "start auction",
+		Long: strings.TrimSpace(fmt.Sprintf(`
+			$ %s tx %s start-auction <auction-id> --from <sender> --chain-id <chain-id>`,
+			version.AppName, auctiontypes.ModuleName),
+		),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			if args[0] == "" {
+				return fmt.Errorf("auction id cannot be empty")
+			}
+
+			owner := clientCtx.GetFromAddress().String()
+			auctionId, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("unable to parse auction id %s", args[0])
+			}
+
+			msg := auctiontypes.MsgStartAuction{
+				Owner: owner,
+				Id:    auctionId,
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
 func BidCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bid [auction-id] [bid-price] --from [sender]",
@@ -99,11 +138,8 @@ func BidCmd() *cobra.Command {
 			}
 
 			if args[0] == "" || args[1] == "" {
-				return fmt.Errorf("contract-id and deposit cannot be empty")
+				return fmt.Errorf("auction-id and deposit cannot be empty")
 			}
-
-			fmt.Printf("Auction Id :: %s", args[0])
-			fmt.Printf("Bid Price :: %s", args[1])
 
 			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
@@ -115,9 +151,11 @@ func BidCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			// TODO: Remove?
 			found, bidPrice := bp.Find(sdk.DefaultBondDenom)
 			if !found {
-				return fmt.Errorf("invalid bid price")
+				return fmt.Errorf("invalid bid denom")
 			}
 
 			owner := clientCtx.GetFromAddress().String()
