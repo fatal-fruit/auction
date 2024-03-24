@@ -37,12 +37,6 @@ func TestParseMetadata(t *testing.T) {
 		(*auctiontypes.AuctionMetadata)(nil),
 		&auctiontypes.ReserveAuctionMetadata{},
 	)
-	// TODO: Remove
-	encConfig.InterfaceRegistry.RegisterInterface(
-		"fatal_fruit.auction.v1.AuctionMetadataReq",
-		(*auctiontypes.AuctionMetadata)(nil),
-		&auctiontypes.ReserveAuctionMetadataReq{},
-	)
 	encConfig.InterfaceRegistry.RegisterInterface(
 		"fatal_fruit.auction.v1.Auction",
 		(*auctiontypes.Auction)(nil),
