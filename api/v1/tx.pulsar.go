@@ -2776,7 +2776,8 @@ var (
 	md_MsgNewBid            protoreflect.MessageDescriptor
 	fd_MsgNewBid_owner      protoreflect.FieldDescriptor
 	fd_MsgNewBid_auction_id protoreflect.FieldDescriptor
-	fd_MsgNewBid_bid        protoreflect.FieldDescriptor
+	fd_MsgNewBid_bid_amount protoreflect.FieldDescriptor
+	fd_MsgNewBid_data       protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -2784,7 +2785,8 @@ func init() {
 	md_MsgNewBid = File_fatal_fruit_auction_v1_tx_proto.Messages().ByName("MsgNewBid")
 	fd_MsgNewBid_owner = md_MsgNewBid.Fields().ByName("owner")
 	fd_MsgNewBid_auction_id = md_MsgNewBid.Fields().ByName("auction_id")
-	fd_MsgNewBid_bid = md_MsgNewBid.Fields().ByName("bid")
+	fd_MsgNewBid_bid_amount = md_MsgNewBid.Fields().ByName("bid_amount")
+	fd_MsgNewBid_data = md_MsgNewBid.Fields().ByName("data")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgNewBid)(nil)
@@ -2864,9 +2866,15 @@ func (x *fastReflection_MsgNewBid) Range(f func(protoreflect.FieldDescriptor, pr
 			return
 		}
 	}
-	if x.Bid != nil {
-		value := protoreflect.ValueOfMessage(x.Bid.ProtoReflect())
-		if !f(fd_MsgNewBid_bid, value) {
+	if x.BidAmount != nil {
+		value := protoreflect.ValueOfMessage(x.BidAmount.ProtoReflect())
+		if !f(fd_MsgNewBid_bid_amount, value) {
+			return
+		}
+	}
+	if x.Data != nil {
+		value := protoreflect.ValueOfMessage(x.Data.ProtoReflect())
+		if !f(fd_MsgNewBid_data, value) {
 			return
 		}
 	}
@@ -2889,8 +2897,10 @@ func (x *fastReflection_MsgNewBid) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Owner != ""
 	case "fatal_fruit.auction.v1.MsgNewBid.auction_id":
 		return x.AuctionId != uint64(0)
-	case "fatal_fruit.auction.v1.MsgNewBid.bid":
-		return x.Bid != nil
+	case "fatal_fruit.auction.v1.MsgNewBid.bid_amount":
+		return x.BidAmount != nil
+	case "fatal_fruit.auction.v1.MsgNewBid.data":
+		return x.Data != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: fatal_fruit.auction.v1.MsgNewBid"))
@@ -2911,8 +2921,10 @@ func (x *fastReflection_MsgNewBid) Clear(fd protoreflect.FieldDescriptor) {
 		x.Owner = ""
 	case "fatal_fruit.auction.v1.MsgNewBid.auction_id":
 		x.AuctionId = uint64(0)
-	case "fatal_fruit.auction.v1.MsgNewBid.bid":
-		x.Bid = nil
+	case "fatal_fruit.auction.v1.MsgNewBid.bid_amount":
+		x.BidAmount = nil
+	case "fatal_fruit.auction.v1.MsgNewBid.data":
+		x.Data = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: fatal_fruit.auction.v1.MsgNewBid"))
@@ -2935,8 +2947,11 @@ func (x *fastReflection_MsgNewBid) Get(descriptor protoreflect.FieldDescriptor) 
 	case "fatal_fruit.auction.v1.MsgNewBid.auction_id":
 		value := x.AuctionId
 		return protoreflect.ValueOfUint64(value)
-	case "fatal_fruit.auction.v1.MsgNewBid.bid":
-		value := x.Bid
+	case "fatal_fruit.auction.v1.MsgNewBid.bid_amount":
+		value := x.BidAmount
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "fatal_fruit.auction.v1.MsgNewBid.data":
+		value := x.Data
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
@@ -2962,8 +2977,10 @@ func (x *fastReflection_MsgNewBid) Set(fd protoreflect.FieldDescriptor, value pr
 		x.Owner = value.Interface().(string)
 	case "fatal_fruit.auction.v1.MsgNewBid.auction_id":
 		x.AuctionId = value.Uint()
-	case "fatal_fruit.auction.v1.MsgNewBid.bid":
-		x.Bid = value.Message().Interface().(*v1beta1.Coin)
+	case "fatal_fruit.auction.v1.MsgNewBid.bid_amount":
+		x.BidAmount = value.Message().Interface().(*v1beta1.Coin)
+	case "fatal_fruit.auction.v1.MsgNewBid.data":
+		x.Data = value.Message().Interface().(*anypb.Any)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: fatal_fruit.auction.v1.MsgNewBid"))
@@ -2984,11 +3001,16 @@ func (x *fastReflection_MsgNewBid) Set(fd protoreflect.FieldDescriptor, value pr
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgNewBid) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "fatal_fruit.auction.v1.MsgNewBid.bid":
-		if x.Bid == nil {
-			x.Bid = new(v1beta1.Coin)
+	case "fatal_fruit.auction.v1.MsgNewBid.bid_amount":
+		if x.BidAmount == nil {
+			x.BidAmount = new(v1beta1.Coin)
 		}
-		return protoreflect.ValueOfMessage(x.Bid.ProtoReflect())
+		return protoreflect.ValueOfMessage(x.BidAmount.ProtoReflect())
+	case "fatal_fruit.auction.v1.MsgNewBid.data":
+		if x.Data == nil {
+			x.Data = new(anypb.Any)
+		}
+		return protoreflect.ValueOfMessage(x.Data.ProtoReflect())
 	case "fatal_fruit.auction.v1.MsgNewBid.owner":
 		panic(fmt.Errorf("field owner of message fatal_fruit.auction.v1.MsgNewBid is not mutable"))
 	case "fatal_fruit.auction.v1.MsgNewBid.auction_id":
@@ -3010,8 +3032,11 @@ func (x *fastReflection_MsgNewBid) NewField(fd protoreflect.FieldDescriptor) pro
 		return protoreflect.ValueOfString("")
 	case "fatal_fruit.auction.v1.MsgNewBid.auction_id":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "fatal_fruit.auction.v1.MsgNewBid.bid":
+	case "fatal_fruit.auction.v1.MsgNewBid.bid_amount":
 		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "fatal_fruit.auction.v1.MsgNewBid.data":
+		m := new(anypb.Any)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -3089,8 +3114,12 @@ func (x *fastReflection_MsgNewBid) ProtoMethods() *protoiface.Methods {
 		if x.AuctionId != 0 {
 			n += 1 + runtime.Sov(uint64(x.AuctionId))
 		}
-		if x.Bid != nil {
-			l = options.Size(x.Bid)
+		if x.BidAmount != nil {
+			l = options.Size(x.BidAmount)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Data != nil {
+			l = options.Size(x.Data)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -3122,8 +3151,22 @@ func (x *fastReflection_MsgNewBid) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.Bid != nil {
-			encoded, err := options.Marshal(x.Bid)
+		if x.Data != nil {
+			encoded, err := options.Marshal(x.Data)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if x.BidAmount != nil {
+			encoded, err := options.Marshal(x.BidAmount)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3250,7 +3293,7 @@ func (x *fastReflection_MsgNewBid) ProtoMethods() *protoiface.Methods {
 				}
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Bid", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BidAmount", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -3277,10 +3320,46 @@ func (x *fastReflection_MsgNewBid) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Bid == nil {
-					x.Bid = &v1beta1.Coin{}
+				if x.BidAmount == nil {
+					x.BidAmount = &v1beta1.Coin{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Bid); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.BidAmount); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Data == nil {
+					x.Data = &anypb.Any{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Data); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -4764,7 +4843,8 @@ type MsgNewBid struct {
 	// auction_id is the unique identifier of the auction to bid on.
 	AuctionId uint64 `protobuf:"varint,2,opt,name=auction_id,json=auctionId,proto3" json:"auction_id,omitempty"`
 	// bid is the amount of the bid.
-	Bid *v1beta1.Coin `protobuf:"bytes,3,opt,name=bid,proto3" json:"bid,omitempty"`
+	BidAmount *v1beta1.Coin `protobuf:"bytes,3,opt,name=bid_amount,json=bidAmount,proto3" json:"bid_amount,omitempty"`
+	Data      *anypb.Any    `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *MsgNewBid) Reset() {
@@ -4801,9 +4881,16 @@ func (x *MsgNewBid) GetAuctionId() uint64 {
 	return 0
 }
 
-func (x *MsgNewBid) GetBid() *v1beta1.Coin {
+func (x *MsgNewBid) GetBidAmount() *v1beta1.Coin {
 	if x != nil {
-		return x.Bid
+		return x.BidAmount
+	}
+	return nil
+}
+
+func (x *MsgNewBid) GetData() *anypb.Any {
+	if x != nil {
+		return x.Data
 	}
 	return nil
 }
@@ -4969,20 +5056,26 @@ var file_fatal_fruit_auction_v1_tx_proto_rawDesc = []byte{
 	0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x3a, 0x0b, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73,
 	0x65, 0x6e, 0x64, 0x65, 0x72, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63,
 	0x65, 0x6c, 0x41, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0xdb, 0x01, 0x0a, 0x09, 0x4d, 0x73, 0x67, 0x4e, 0x65, 0x77, 0x42, 0x69, 0x64, 0x12,
+	0x65, 0x22, 0xbb, 0x02, 0x0a, 0x09, 0x4d, 0x73, 0x67, 0x4e, 0x65, 0x77, 0x42, 0x69, 0x64, 0x12,
 	0x2e, 0x0a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
 	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
 	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x12,
 	0x1d, 0x0a, 0x0a, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x09, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x73,
-	0x0a, 0x03, 0x62, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
-	0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x46, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70,
-	0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67,
-	0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x03,
-	0x62, 0x69, 0x64, 0x3a, 0x0a, 0x82, 0xe7, 0xb0, 0x2a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x22,
+	0x01, 0x28, 0x04, 0x52, 0x09, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x80,
+	0x01, 0x0a, 0x0a, 0x62, 0x69, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x46,
+	0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73,
+	0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e,
+	0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x62, 0x69, 0x64, 0x41, 0x6d, 0x6f, 0x75, 0x6e,
+	0x74, 0x12, 0x50, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x14, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x41, 0x6e, 0x79, 0x42, 0x26, 0xca, 0xb4, 0x2d, 0x22, 0x66, 0x61, 0x74, 0x61, 0x6c,
+	0x5f, 0x66, 0x72, 0x75, 0x69, 0x74, 0x2e, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x42, 0x69, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x04, 0x64,
+	0x61, 0x74, 0x61, 0x3a, 0x0a, 0x82, 0xe7, 0xb0, 0x2a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x22,
 	0x13, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x4e, 0x65, 0x77, 0x42, 0x69, 0x64, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x6e, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x45, 0x78, 0x65, 0x63, 0x41,
 	0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72,
@@ -5065,20 +5158,21 @@ var file_fatal_fruit_auction_v1_tx_proto_goTypes = []interface{}{
 var file_fatal_fruit_auction_v1_tx_proto_depIdxs = []int32{
 	10, // 0: fatal_fruit.auction.v1.MsgNewAuction.deposit:type_name -> cosmos.base.v1beta1.Coin
 	11, // 1: fatal_fruit.auction.v1.MsgNewAuction.auction_metadata:type_name -> google.protobuf.Any
-	10, // 2: fatal_fruit.auction.v1.MsgNewBid.bid:type_name -> cosmos.base.v1beta1.Coin
-	0,  // 3: fatal_fruit.auction.v1.Msg.NewAuction:input_type -> fatal_fruit.auction.v1.MsgNewAuction
-	2,  // 4: fatal_fruit.auction.v1.Msg.StartAuction:input_type -> fatal_fruit.auction.v1.MsgStartAuction
-	6,  // 5: fatal_fruit.auction.v1.Msg.NewBid:input_type -> fatal_fruit.auction.v1.MsgNewBid
-	8,  // 6: fatal_fruit.auction.v1.Msg.Exec:input_type -> fatal_fruit.auction.v1.MsgExecAuction
-	1,  // 7: fatal_fruit.auction.v1.Msg.NewAuction:output_type -> fatal_fruit.auction.v1.MsgNewAuctionResponse
-	3,  // 8: fatal_fruit.auction.v1.Msg.StartAuction:output_type -> fatal_fruit.auction.v1.MsgStartAuctionResponse
-	7,  // 9: fatal_fruit.auction.v1.Msg.NewBid:output_type -> fatal_fruit.auction.v1.MsgNewBidResponse
-	9,  // 10: fatal_fruit.auction.v1.Msg.Exec:output_type -> fatal_fruit.auction.v1.MsgExecAuctionResponse
-	7,  // [7:11] is the sub-list for method output_type
-	3,  // [3:7] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	10, // 2: fatal_fruit.auction.v1.MsgNewBid.bid_amount:type_name -> cosmos.base.v1beta1.Coin
+	11, // 3: fatal_fruit.auction.v1.MsgNewBid.data:type_name -> google.protobuf.Any
+	0,  // 4: fatal_fruit.auction.v1.Msg.NewAuction:input_type -> fatal_fruit.auction.v1.MsgNewAuction
+	2,  // 5: fatal_fruit.auction.v1.Msg.StartAuction:input_type -> fatal_fruit.auction.v1.MsgStartAuction
+	6,  // 6: fatal_fruit.auction.v1.Msg.NewBid:input_type -> fatal_fruit.auction.v1.MsgNewBid
+	8,  // 7: fatal_fruit.auction.v1.Msg.Exec:input_type -> fatal_fruit.auction.v1.MsgExecAuction
+	1,  // 8: fatal_fruit.auction.v1.Msg.NewAuction:output_type -> fatal_fruit.auction.v1.MsgNewAuctionResponse
+	3,  // 9: fatal_fruit.auction.v1.Msg.StartAuction:output_type -> fatal_fruit.auction.v1.MsgStartAuctionResponse
+	7,  // 10: fatal_fruit.auction.v1.Msg.NewBid:output_type -> fatal_fruit.auction.v1.MsgNewBidResponse
+	9,  // 11: fatal_fruit.auction.v1.Msg.Exec:output_type -> fatal_fruit.auction.v1.MsgExecAuctionResponse
+	8,  // [8:12] is the sub-list for method output_type
+	4,  // [4:8] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_fatal_fruit_auction_v1_tx_proto_init() }

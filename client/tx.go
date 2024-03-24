@@ -13,23 +13,26 @@ import (
 	"strings"
 )
 
-// NewContractCmd creates a CLI command for MsgNewContract.
+// NewAuctionCmd creates a CLI command for MsgNewAuction.
 func NewAuctionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-auction [auction-json-file] [deposit] --from [sender]",
-		Args:  cobra.ExactArgs(2),
+		Use:   "create-auction [type] [auction-json-file] [deposit] --from [sender]",
+		Args:  cobra.ExactArgs(3),
 		Short: "create new auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
-			$ %s tx %s create-auction <deposit> auction_metadata.json --from <sender> --chain-id <chain-id>
+			$ %s tx %s create-auction <type> auction_metadata.json <deposit> --from <sender> --chain-id <chain-id>
+		
+		Where auction_type is the type url of the auction
+		ex: /fatal_fruit.auction.v1.ReserveAuctionMetadata
 
-		Where auction_metadata.json contains:
+		and auction_metadata.json contains:
 		{
 			"@type": "/fatal_fruit.auction.v1.ReserveAuctionMetadata",
-			"threshold": "1",
-			"windows": {
-				"voting_period": "120h",
-				"min_execution_period": "0s"
-			}
+			"duration": "1000000ms",  
+				"reserve_price": {
+					"denom":"stake",
+					"amount":"250"
+				}
 		}
 		`, version.AppName, auctiontypes.ModuleName),
 		),
@@ -39,53 +42,34 @@ func NewAuctionCmd() *cobra.Command {
 				return err
 			}
 
-			if args[0] == "" || args[1] == "" {
-				return fmt.Errorf("auction metadata and deposit cannot be empty")
+			if args[0] == "" || args[1] == "" || args[2] == "" {
+				return fmt.Errorf("auction type, metadata, and deposit cannot be empty")
 			}
 
-			fmt.Printf("Auction Metadata :: %s", args[0])
-			fmt.Printf("Deposit :: %s", args[1])
-			fmt.Printf("Owner :: %s", clientCtx.GetFromAddress().String())
-
-			auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[0])
+			// Validate auction type
+			auctionType, err := parseAuctionType(clientCtx.Codec, args[0])
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Auction :: %s", auctionMetadata)
 
-			// Parse Deposit
+			// Parse auction metadata
+			auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[1])
+			if err != nil {
+				return err
+			}
+
+			// Parse deposit
 			deposit, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
 				return err
 			}
 
-			// TODO: Validate auction
-			//if err := auction.ValidateBasic(); err != nil {
-			//	return err
-			//}
-
-			// Parse Reserve Price
-			//rp, err := sdk.ParseCoinsNormalized(args[0])
-			//if err != nil {
-			//	return err
-			//}
-			//found, reservePrice := rp.Find(sdk.DefaultBondDenom)
-			//if !found {
-			//	return fmt.Errorf("Invalid reserve price")
-			//}
-
-			// Parse Auction Duration
-			//seconds, err := strconv.Atoi(args[1])
-			//if err != nil {
-			//	return fmt.Errorf("invalid duration")
-			//}
-			//duration := time.Duration(seconds) * time.Second
-
 			owner := clientCtx.GetFromAddress().String()
 
 			msg := auctiontypes.MsgNewAuction{
-				Owner:   owner,
-				Deposit: deposit,
+				Owner:       owner,
+				AuctionType: auctionType,
+				Deposit:     deposit,
 			}
 
 			if err = msg.SetMetadata(auctionMetadata); err != nil {
@@ -133,13 +117,13 @@ func BidCmd() *cobra.Command {
 			}
 			found, bidPrice := bp.Find(sdk.DefaultBondDenom)
 			if !found {
-				return fmt.Errorf("Invalid bid price")
+				return fmt.Errorf("invalid bid price")
 			}
 
 			owner := clientCtx.GetFromAddress().String()
 
 			msg := auctiontypes.MsgNewBid{
-				Bid:       bidPrice,
+				BidAmount: bidPrice,
 				Owner:     owner,
 				AuctionId: id,
 			}

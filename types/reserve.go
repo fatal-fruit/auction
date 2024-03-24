@@ -43,7 +43,7 @@ func (ra *ReserveAuction) StartAuction(blockTime time.Time) {
 // TODO: Implement logic to transfer funds
 func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) error {
 	// Validate bid price is over Reserve Price
-	if bidMsg.Bid.IsLT(ra.Metadata.ReservePrice) {
+	if bidMsg.BidAmount.IsLT(ra.Metadata.ReservePrice) {
 		return fmt.Errorf("bid lower than reserve price :: %s", ra.Metadata.ReservePrice.String())
 	}
 
@@ -53,18 +53,18 @@ func (ra *ReserveAuction) SubmitBid(blockTime time.Time, bidMsg *MsgNewBid) erro
 	}
 
 	// Validate bid price is competitive
-	if len(ra.Metadata.Bids) > 0 && bidMsg.Bid.IsLTE(ra.Metadata.LastPrice) {
+	if len(ra.Metadata.Bids) > 0 && bidMsg.BidAmount.IsLTE(ra.Metadata.LastPrice) {
 		return fmt.Errorf("bid lower than latest price :: %s", ra.Metadata.LastPrice)
 	}
 
 	ra.Metadata.Bids = append(ra.Metadata.Bids, &Bid{
 		AuctionId: bidMsg.AuctionId,
 		Bidder:    bidMsg.Owner,
-		BidPrice:  bidMsg.Bid,
+		BidPrice:  bidMsg.BidAmount,
 		Timestamp: blockTime,
 	})
 
-	ra.Metadata.LastPrice = bidMsg.Bid
+	ra.Metadata.LastPrice = bidMsg.BidAmount
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (s *SettleStrategy) ExecuteStrategy(ctx context.Context, auction *ReserveAu
 func (s *SettleStrategy) SubmitBid(ctx context.Context, bid *MsgNewBid, bk BankKeeper) error {
 	// Handle funds
 	bidder := sdk.MustAccAddressFromBech32(bid.GetOwner())
-	amt := bid.GetBid()
+	amt := bid.GetBidAmount()
 	escrowAddr := sdk.MustAccAddressFromBech32(s.EscrowContractAddress)
 
 	// Send bid amount to escrow account

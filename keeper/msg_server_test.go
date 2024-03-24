@@ -311,7 +311,7 @@ func TestNewBid(t *testing.T) {
 			bid := auctiontypes.MsgNewBid{
 				AuctionId: msgRes.contractId,
 				Owner:     tc.owner.String(),
-				Bid:       tc.bid,
+				BidAmount: tc.bid,
 			}
 			_, err := f.MsgServer.NewBid(f.Ctx, &bid)
 

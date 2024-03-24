@@ -7,6 +7,14 @@ import (
 	"os"
 )
 
+func parseAuctionType(cdc codec.Codec, auctionType string) (string, error) {
+	_, err := cdc.InterfaceRegistry().Resolve(auctionType)
+	if err != nil {
+		return "", fmt.Errorf("auction type %s not registered: %v", auctionType, err)
+	}
+	return auctionType, nil
+}
+
 func parseAuctionMetadata(cdc codec.Codec, auctionMetadataFile string) (auctiontypes.AuctionMetadata, error) {
 	if auctionMetadataFile == "" {
 		return nil, fmt.Errorf("invalid or missing auction metadata")
