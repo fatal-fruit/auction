@@ -22,13 +22,12 @@ type Keeper struct {
 
 	ak           auctiontypes.AccountKeeper
 	bk           auctiontypes.BankKeeper
-	es           auctiontypes.EscrowService
 	defaultDenom string
 
 	// state management
 	Schema        collections.Schema
 	IDs           collections.Sequence
-	Auctions      collections.Map[uint64, auctiontypes.ReserveAuction]
+	Auctions      collections.Map[uint64, auctiontypes.Auction]
 	OwnerAuctions collections.Map[sdk.AccAddress, auctiontypes.OwnerAuctions]
 
 	// Queues
@@ -36,16 +35,20 @@ type Keeper struct {
 	ExpiredAuctions   collections.KeySet[uint64]
 	PendingAuctions   collections.KeySet[uint64]
 	CancelledAuctions collections.KeySet[uint64]
+
+	// Auction Type Registry
+	resolver auctiontypes.AuctionResolver
 }
 
-func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, es auctiontypes.EscrowService, denom string, logger log.Logger) Keeper {
+// Todo: pass denom and authority as configs
+func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService storetypes.KVStoreService, authority string, ak auctiontypes.AccountKeeper, bk auctiontypes.BankKeeper, denom string, logger log.Logger) Keeper {
 	if _, err := addressCodec.StringToBytes(authority); err != nil {
 		panic(fmt.Errorf("invalid authority address: %w", err))
 	}
 
 	sb := collections.NewSchemaBuilder(storeService)
 	ids := collections.NewSequence(sb, auctiontypes.IDKey, "auctionIds")
-	auctions := collections.NewMap(sb, auctiontypes.AuctionsKey, "auctions", collections.Uint64Key, codec.CollValue[auctiontypes.ReserveAuction](cdc))
+	auctions := collections.NewMap(sb, auctiontypes.AuctionsKey, "auctions", collections.Uint64Key, codec.CollInterfaceValue[auctiontypes.Auction](cdc))
 	ownerAuctions := collections.NewMap(sb, auctiontypes.OwnerAuctionsKey, "ownerAuctions", sdk.AccAddressKey, codec.CollValue[auctiontypes.OwnerAuctions](cdc))
 	activeAuctions := collections.NewKeySet(sb, auctiontypes.ActiveAuctionsKey, "activeAuctions", collections.Uint64Key)
 	expiredAuctions := collections.NewKeySet(sb, auctiontypes.ExpiredAuctionsKey, "expiredAuctions", collections.Uint64Key)
@@ -58,7 +61,6 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 		authority:    authority,
 		ak:           ak,
 		bk:           bk,
-		es:           es,
 		defaultDenom: denom,
 		logger:       logger,
 	}
@@ -80,6 +82,10 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 	return k
 }
 
+func (k *Keeper) SetAuctionTypesResolver(resolver auctiontypes.AuctionResolver) {
+	k.resolver = resolver
+}
+
 func (k *Keeper) GetAuthority() string {
 	return k.authority
 }
@@ -98,7 +104,7 @@ func (k *Keeper) GetModuleBalance(ctx context.Context, denom string) sdk.Coin {
 }
 
 // Logger returns a module-specific logger.
-func (keeper Keeper) Logger() log.Logger {
+func (keeper *Keeper) Logger() log.Logger {
 	return keeper.logger.With("module", "x/"+auctiontypes.ModuleName)
 }
 
@@ -114,10 +120,12 @@ func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 		if err != nil {
 			return true, err
 		}
-		if auction.EndTime.Before(ctx.BlockTime()) {
+		// TODO: Auction checks itself for expiration
+		if auction.IsExpired(ctx.BlockTime()) {
 			expired = append(expired, auctionId)
+		} else {
+			numActive++
 		}
-		numActive++
 		return false, nil
 	})
 	if err != nil {
@@ -153,7 +161,9 @@ func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 		if err != nil {
 			return true, err
 		}
-		if len(auction.Bids) > 0 {
+
+		// TODO: Auction executes own logic for this
+		if auction.HasBids() {
 			pending = append(pending, auctionId)
 		} else {
 			cancelled = append(cancelled, auctionId)
@@ -285,16 +295,17 @@ func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
 	return nil
 }
 
-func (k Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
-	var auctions []auctiontypes.ReserveAuction
-
-	err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
-		auctions = append(auctions, auction)
-		return false, nil
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	return auctions
+func (k *Keeper) GetAllAuctions(ctx sdk.Context) []auctiontypes.ReserveAuction {
+	//var auctions []auctiontypes.ReserveAuction
+	//
+	//err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
+	//	auctions = append(auctions, auction)
+	//	return false, nil
+	//})
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//return auctions
+	return nil
 }

@@ -7,7 +7,7 @@ import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos_proto/cosmos.proto";
 import "fatal_fruit/auction/v1/types.proto";
-
+import "google/protobuf/any.proto";
 
 // Service Query provides methods for querying auction data.
 service Query {
@@ -32,7 +32,9 @@ service Query {
 message QueryAuctionRequest { uint64 id = 1; }
 
 // QueryAuctionResponse is the request type for the Query/Names RPC method
-message QueryAuctionResponse { ReserveAuction auction = 1; }
+message QueryAuctionResponse {
+  google.protobuf.Any auction = 1 [(cosmos_proto.accepts_interface) = "fatal_fruit.auction.v1.Auction"];
+}
 
 // QueryOwnerAuctionsRequest is the request type for querying auctions by an owner's address.
 message QueryOwnerAuctionsRequest {
@@ -40,7 +42,9 @@ message QueryOwnerAuctionsRequest {
 }
 
 // QueryOwnerAuctionsResponse is the response type for the Query/OwnerAuctions RPC method.
-message QueryOwnerAuctionsResponse { repeated ReserveAuction auctions = 1; }
+message QueryOwnerAuctionsResponse {
+  repeated google.protobuf.Any auctions = 1 [(cosmos_proto.accepts_interface) = "fatal_fruit.auction.v1.Auction"];
+}
 
 message QueryAllAuctionsRequest {}
 

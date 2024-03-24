@@ -2,10 +2,6 @@ package client
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -13,16 +9,32 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
+	"strconv"
+	"strings"
 )
 
-// NewContractCmd creates a CLI command for MsgNewContract.
+// NewAuctionCmd creates a CLI command for MsgNewAuction.
 func NewAuctionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-auction [reserve-price] [duration] [deposit] --from [sender]",
+		Use:   "create-auction [type] [auction-json-file] [deposit] --from [sender]",
 		Args:  cobra.ExactArgs(3),
 		Short: "create new auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
-			$ %s tx %s create-contract <reserve-price> <duration> <deposit> --from <sender> --chain-id <chain-id>`, version.AppName, auctiontypes.ModuleName),
+			$ %s tx %s create-auction <type> auction_metadata.json <deposit> --from <sender> --chain-id <chain-id>
+		
+		Where auction_type is the type url of the auction
+		ex: /fatal_fruit.auction.v1.ReserveAuctionMetadata
+
+		and auction_metadata.json contains:
+		{
+			"@type": "/fatal_fruit.auction.v1.ReserveAuctionMetadata",
+			"duration": "1000000ms",  
+				"reserve_price": {
+					"denom":"stake",
+					"amount":"250"
+				}
+		}
+		`, version.AppName, auctiontypes.ModuleName),
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -31,45 +43,37 @@ func NewAuctionCmd() *cobra.Command {
 			}
 
 			if args[0] == "" || args[1] == "" || args[2] == "" {
-				return fmt.Errorf("reserve-price, deposit, and duration cannot be empty")
+				return fmt.Errorf("auction type, metadata, and deposit cannot be empty")
 			}
 
-			fmt.Printf("Reserve Price :: %s", args[0])
-			fmt.Printf("Duration :: %s", args[1])
-			fmt.Printf("Deposit :: %s", args[2])
-			fmt.Printf("Owner :: %s", clientCtx.GetFromAddress().String())
-
-			// Parse Reserve Price
-			rp, err := sdk.ParseCoinsNormalized(args[0])
+			// Validate auction type
+			auctionType, err := parseAuctionType(clientCtx.Codec, args[0])
 			if err != nil {
 				return err
 			}
-			found, reservePrice := rp.Find(sdk.DefaultBondDenom)
-			if !found {
-				return fmt.Errorf("Invalid reserve price")
+
+			// Parse auction metadata
+			auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[1])
+			if err != nil {
+				return err
 			}
 
-			// Parse Deposit
+			// Parse deposit
 			deposit, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
 				return err
 			}
 
-			// Parse Auction Duration
-			seconds, err := strconv.Atoi(args[1])
-			if err != nil {
-				return fmt.Errorf("invalid duration")
-			}
-			duration := time.Duration(seconds) * time.Second
-
 			owner := clientCtx.GetFromAddress().String()
 
 			msg := auctiontypes.MsgNewAuction{
-				Owner:        owner,
-				Deposit:      deposit,
-				ReservePrice: reservePrice,
-				Duration:     duration,
-				AuctionType:  auctiontypes.RESERVE,
+				Owner:       owner,
+				AuctionType: auctionType,
+				Deposit:     deposit,
+			}
+
+			if err = msg.SetMetadata(auctionMetadata); err != nil {
+				return err
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
@@ -113,13 +117,13 @@ func BidCmd() *cobra.Command {
 			}
 			found, bidPrice := bp.Find(sdk.DefaultBondDenom)
 			if !found {
-				return fmt.Errorf("Invalid bid price")
+				return fmt.Errorf("invalid bid price")
 			}
 
 			owner := clientCtx.GetFromAddress().String()
 
 			msg := auctiontypes.MsgNewBid{
-				Bid:       bidPrice,
+				BidAmount: bidPrice,
 				Owner:     owner,
 				AuctionId: id,
 			}

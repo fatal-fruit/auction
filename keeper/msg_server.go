@@ -19,37 +19,26 @@ func NewMsgServerImpl(keeper Keeper) at.MsgServer {
 }
 
 func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*at.MsgNewAuctionResponse, error) {
-	// Get Next Id
-	id, err := ms.k.IDs.Next(goCtx)
+	owner := sdk.MustAccAddressFromBech32(msg.Owner)
+
+	var md at.AuctionMetadata
+	err := ms.k.cdc.UnpackAny(msg.GetAuctionMetadata(), &md)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating id for auction")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error serializing auction metadata")
 	}
 
-	owner := sdk.MustAccAddressFromBech32(msg.Owner)
+	auction, err := ms.k.CreateAuction(goCtx, msg.AuctionType, owner, md)
+	if err != nil {
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
+	}
 
 	err = ms.k.bk.SendCoinsFromAccountToModule(goCtx, owner, at.ModuleName, msg.Deposit)
 	if err != nil {
 		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error crediting auction deposit")
 	}
 
-	strategy, err := BuildSettleStrategy(goCtx, ms.k.es, id)
-	if err != nil {
-		// TODO: Rollback deposit
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating escrow contract for auction")
-	}
-	auction := at.ReserveAuction{
-		Id:           id,
-		Status:       at.ACTIVE,
-		Owner:        owner.String(),
-		AuctionType:  msg.AuctionType,
-		Duration:     msg.Duration,
-		ReservePrice: msg.ReservePrice,
-		Bids:         []*at.Bid{},
-		Strategy:     strategy.ToProto(),
-	}
-
 	ms.k.Logger().Info(auction.String())
-	err = ms.k.Auctions.Set(goCtx, id, auction)
+	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 	if err != nil {
 		// TODO: Rollback deposit
 		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
@@ -67,7 +56,7 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*a
 
 		}
 	}
-	oa.Ids = append(oa.Ids, id)
+	oa.Ids = append(oa.Ids, auction.GetId())
 
 	// Set Auctions by Owner
 	err = ms.k.OwnerAuctions.Set(goCtx, owner, oa)
@@ -76,20 +65,20 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*a
 	}
 
 	// Push auction to ActiveAuction Queue
-	err = ms.k.ActiveAuctions.Set(goCtx, id)
+	err = ms.k.ActiveAuctions.Set(goCtx, auction.GetId())
 	if err != nil {
 		return &at.MsgNewAuctionResponse{}, err
 	}
 
 	return &at.MsgNewAuctionResponse{
-		Id: id,
+		Id: auction.GetId(),
 	}, nil
 }
 
 func (ms msgServer) StartAuction(goCtx context.Context, msg *at.MsgStartAuction) (*at.MsgStartAuctionResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	var auction at.ReserveAuction
+	var auction at.Auction
 	hasAuctions, err := ms.k.Auctions.Has(goCtx, msg.Id)
 	if err != nil {
 		return &at.MsgStartAuctionResponse{}, err
@@ -102,12 +91,8 @@ func (ms msgServer) StartAuction(goCtx context.Context, msg *at.MsgStartAuction)
 	}
 
 	// Generate start/end time
-	start := ctx.BlockTime()
-	end := start.Add(auction.Duration)
-
-	// Set Start and End time for auction
-	auction.StartTime = start
-	auction.EndTime = end
+	// TODO: Pass context instead
+	auction.StartAuction(ctx.BlockTime())
 
 	// Save updated auction
 	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
@@ -137,29 +122,10 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNew
 			return &at.MsgNewBidResponse{}, err
 		}
 
-		// Validate bid price is over Reserve Price
-		if msg.Bid.IsLT(auction.ReservePrice) {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("bid lower than reserve price")
+		auction, err = ms.k.SubmitBid(ctx, auction.GetType(), auction, msg)
+		if err != nil {
+			return &at.MsgNewBidResponse{}, fmt.Errorf("error creating auction")
 		}
-
-		// Validate auction is active
-		if ctx.BlockTime().After(auction.EndTime) {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("expired auction")
-		}
-
-		// Validate bid price is competitive
-		if len(auction.Bids) > 0 && msg.Bid.IsLTE(auction.LastPrice) {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("bid lower than latest price")
-		}
-
-		auction.Bids = append(auction.Bids, &at.Bid{
-			AuctionId: msg.AuctionId,
-			Bidder:    msg.Owner,
-			BidPrice:  msg.Bid,
-			Timestamp: ctx.BlockTime(),
-		})
-
-		auction.LastPrice = msg.Bid
 
 		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 		if err != nil {
@@ -187,13 +153,10 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 		return &at.MsgExecAuctionResponse{}, err
 	}
 
-	// execute strategy
-	exeuctionStrat := SettleStrategy{auction.Strategy}
-	err = exeuctionStrat.ExecuteStrategy(goCtx, auction, ms.k.es, ms.k.bk)
+	err = ms.k.ExecuteAuction(goCtx, auction)
 	if err != nil {
 		return &at.MsgExecAuctionResponse{}, err
 	}
-	//auction.Strategy
 
 	// remove from pending
 	err = ms.k.PendingAuctions.Remove(goCtx, msg.GetAuctionId())
@@ -201,7 +164,7 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 		return &at.MsgExecAuctionResponse{}, err
 	}
 	//update status
-	auction.Status = at.CLOSED
+	auction.UpdateStatus(at.CLOSED)
 	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 	if err != nil {
 		return &at.MsgExecAuctionResponse{}, err
