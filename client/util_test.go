@@ -1,14 +1,15 @@
 package client
 
 import (
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestParseAuctionType(t *testing.T) {

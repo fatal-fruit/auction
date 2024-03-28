@@ -2,6 +2,9 @@ package client
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -9,18 +12,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
-	"strconv"
-	"strings"
 )
 
 // NewAuctionCmd creates a CLI command for MsgNewAuction.
 func NewAuctionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-auction [type] [auction-json-file] [deposit] --from [sender]",
-		Args:  cobra.ExactArgs(3),
+		Use:   "create-auction [auction-json-file] [deposit] --from [sender]",
+		Args:  cobra.ExactArgs(2),
 		Short: "create new auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
-			$ %s tx %s create-auction <type> auction_metadata.json <deposit> --from <sender> --chain-id <chain-id>
+			$ %s tx %s create-auction auction_metadata.json <deposit> --from <sender> --chain-id <chain-id>
 		
 		Where auction_type is the type url of the auction
 		ex: /fatal_fruit.auction.v1.ReserveAuctionMetadata
@@ -42,41 +43,45 @@ func NewAuctionCmd() *cobra.Command {
 				return err
 			}
 
-			if args[0] == "" || args[1] == "" || args[2] == "" {
-				return fmt.Errorf("auction type, metadata, and deposit cannot be empty")
+			if args[0] == "" || args[1] == "" {
+				return fmt.Errorf("metadata, and deposit cannot be empty")
 			}
 
-			// Validate auction type
-			auctionType, err := parseAuctionType(clientCtx.Codec, args[0])
+			auctionType, err := PromptAuctionType()
 			if err != nil {
 				return err
 			}
 
-			// Parse auction metadata
-			auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[1])
-			if err != nil {
-				return err
+			var msg sdk.Msg
+
+			switch auctionType {
+			case "ReserveAuction":
+				auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[0])
+				if err != nil {
+					return err
+				}
+
+				deposit, err := sdk.ParseCoinsNormalized(args[1])
+				if err != nil {
+					return err
+				}
+
+				owner := clientCtx.GetFromAddress().String()
+
+				msg := auctiontypes.MsgNewAuction{
+					Owner:       owner,
+					AuctionType: auctionType,
+					Deposit:     deposit,
+				}
+
+				if err = msg.SetMetadata(auctionMetadata); err != nil {
+					return err
+				}
+
+			default:
+				return fmt.Errorf("unsupported auction type: %s", auctionType)
 			}
-
-			// Parse deposit
-			deposit, err := sdk.ParseCoinsNormalized(args[2])
-			if err != nil {
-				return err
-			}
-
-			owner := clientCtx.GetFromAddress().String()
-
-			msg := auctiontypes.MsgNewAuction{
-				Owner:       owner,
-				AuctionType: auctionType,
-				Deposit:     deposit,
-			}
-
-			if err = msg.SetMetadata(auctionMetadata); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
