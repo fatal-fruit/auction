@@ -40,6 +40,13 @@ func PromptAuctionType(cdc codec.Codec) (string, error) {
 }
 
 func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
+	// example metadata auctionMetadata check:
+	//duration:<seconds:10 >
+	//start_time:<seconds:1713797378 nanos:274181000 >
+	//end_time:<seconds:1713800989 nanos:313768000 >
+	//reserve_price:<denom:"uatom" amount:"250" >
+	//last_price:<amount:"0" >
+	//
 
 	promptDuration := promptui.Prompt{
 		Label: "Duration (in seconds)",
