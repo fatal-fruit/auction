@@ -162,14 +162,22 @@ func StartAuctionCmd() *cobra.Command {
 				return fmt.Errorf("auction id cannot be empty")
 			}
 
-			owner := clientCtx.GetFromAddress().String()
+			if args[1] == "" {
+				return fmt.Errorf("owner cannot be empty")
+			}
+
 			auctionId, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("unable to parse auction id %s", args[0])
 			}
 
+			owner, err := sdk.AccAddressFromBech32(args[1])
+			if err != nil {
+				return fmt.Errorf("unable to parse owner address %s", args[1])
+			}
+
 			msg := auctiontypes.MsgStartAuction{
-				Owner: owner,
+				Owner: owner.String(),
 				Id:    auctionId,
 			}
 

@@ -3,10 +3,11 @@ package types
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
-	"time"
 )
 
 type Auction interface {
@@ -101,4 +102,13 @@ func (m *MsgNewAuction) SetMetadata(metadata AuctionMetadata) error {
 	}
 	m.AuctionMetadata = md
 	return nil
+}
+
+// ListTypes returns all registered auction types.
+func (ar *auctionResolver) ListTypes() []string {
+	var types []string
+	for key := range ar.handlers {
+		types = append(types, key)
+	}
+	return types
 }

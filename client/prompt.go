@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/auctiontypes"
+	at "github.com/fatal-fruit/auction/types"
 	"github.com/manifoldco/promptui"
 )
 
@@ -35,6 +36,16 @@ func PromptAuctionType(cdc codec.Codec) (string, error) {
 
 	selectedAuctionType := auctionTypes[idx]
 	result := selectedAuctionType
+
+	resolver := at.NewResolver()
+
+	switch selectedAuctionType {
+	case "/fatal_fruit.auction.v1.AuctionMetadata":
+		handler := auctiontypes.NewReserveAuctionHandler(EscrowService, bk)
+		resolver.AddType(selectedAuctionType, handler)
+	default:
+		return "", fmt.Errorf("unknown auction type: %s", selectedAuctionType)
+	}
 
 	return result, nil
 }
