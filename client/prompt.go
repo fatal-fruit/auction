@@ -10,7 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/auctiontypes"
-	at "github.com/fatal-fruit/auction/types"
 	"github.com/manifoldco/promptui"
 )
 
@@ -36,16 +35,6 @@ func PromptAuctionType(cdc codec.Codec) (string, error) {
 
 	selectedAuctionType := auctionTypes[idx]
 	result := selectedAuctionType
-
-	resolver := at.NewResolver()
-
-	switch selectedAuctionType {
-	case "/fatal_fruit.auction.v1.AuctionMetadata":
-		handler := auctiontypes.NewReserveAuctionHandler(EscrowService, bk)
-		resolver.AddType(selectedAuctionType, handler)
-	default:
-		return "", fmt.Errorf("unknown auction type: %s", selectedAuctionType)
-	}
 
 	return result, nil
 }
@@ -89,20 +78,8 @@ func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
 		return nil, err
 	}
 
-	startTime, err := promptForTime("Select Start Time", 0)
-	if err != nil {
-		return nil, err
-	}
-
-	endTime, err := promptForTime("Select End Time", duration)
-	if err != nil {
-		return nil, err
-	}
-
 	metadata := &auctiontypes.ReserveAuctionMetadata{
-		Duration:     duration,
-		StartTime:    startTime,
-		EndTime:      endTime,
+		Duration: duration,
 		ReservePrice: reservePrice,
 	}
 
