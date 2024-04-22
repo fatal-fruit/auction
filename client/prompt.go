@@ -5,32 +5,27 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/types"
+	auctiontypes "github.com/fatal-fruit/auction/auctiontypes"
 	"github.com/manifoldco/promptui"
 )
 
-type auctionType struct {
-	AuctionType string
-	MsgType     string
-	Msg         sdk.Msg
-}
+func PromptAuctionType(cdc codec.Codec) (string, error) {
+	var auctionTypes []string
 
-func PromptAuctionType() (string, error) {
-	var suggestedAuctionTypes = []auctionType{
-		{
-			AuctionType: "ReserveAuction",
-			MsgType:     "fatal_fruit.auction.v1.ReserveAuction",
-		},
-	}
-	var auctionTypeNames []string
-	for _, auctionType := range suggestedAuctionTypes {
-		auctionTypeNames = append(auctionTypeNames, auctionType.AuctionType)
+	interfaces := cdc.InterfaceRegistry().ListAllInterfaces()
+	for _, i := range interfaces {
+		if strings.Contains(i, "Auction") {
+			auctionTypes = append(auctionTypes, i)
+		}
 	}
 
 	selectPrompt := promptui.Select{
 		Label: "Select Auction Type",
-		Items: auctionTypeNames,
+		Items: auctionTypes,
 	}
 
 	idx, _, err := selectPrompt.Run()
@@ -38,10 +33,105 @@ func PromptAuctionType() (string, error) {
 		return "", err
 	}
 
-	selectedAuctionType := auctionTypeNames[idx]
+	selectedAuctionType := auctionTypes[idx]
 	result := selectedAuctionType
 
 	return result, nil
+}
+
+func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
+
+	promptDuration := promptui.Prompt{
+		Label: "Duration (in seconds)",
+	}
+	durationStr, err := promptDuration.Run()
+	if err != nil {
+		return nil, err
+	}
+	duration, err := time.ParseDuration(durationStr + "s")
+	if err != nil {
+		return nil, err
+	}
+
+	promptReservePrice := promptui.Prompt{
+		Label: "Reserve Price (amount denom)",
+		Validate: func(input string) error {
+			if _, err := types.ParseCoinNormalized(input); err != nil {
+				return fmt.Errorf("invalid reserve price format")
+			}
+			return nil
+		},
+	}
+	reservePriceStr, err := promptReservePrice.Run()
+	if err != nil {
+		return nil, err
+	}
+	reservePrice, err := types.ParseCoinNormalized(reservePriceStr)
+	if err != nil {
+		return nil, err
+	}
+
+	startTime, err := promptForTime("Select Start Time", 0)
+	if err != nil {
+		return nil, err
+	}
+
+	endTime, err := promptForTime("Select End Time", duration)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata := &auctiontypes.ReserveAuctionMetadata{
+		Duration:     duration,
+		StartTime:    startTime,
+		EndTime:      endTime,
+		ReservePrice: reservePrice,
+	}
+
+	return metadata, nil
+}
+
+func promptForTime(label string, addDuration time.Duration) (time.Time, error) {
+	timeOptions := []string{"Now", "In 1 hour", "Custom Time"}
+	timePrompt := promptui.Select{
+		Label: fmt.Sprintf("%s", label),
+		Items: timeOptions,
+	}
+	idx, _, err := timePrompt.Run()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	var selectedTime time.Time
+	switch timeOptions[idx] {
+	case "Now":
+		selectedTime = time.Now().Add(addDuration)
+	case "In 1 hour":
+		selectedTime = time.Now().Add(time.Hour + addDuration)
+	case "Custom Time":
+		specificTimePrompt := promptui.Prompt{
+			Label: "Enter Time (YYYY-MM-DD HH:MM:SS)",
+			Validate: func(input string) error {
+				_, err := time.Parse("2006-01-02 15:04:05", input)
+				if err != nil {
+					return fmt.Errorf("invalid time format")
+				}
+				return nil
+			},
+		}
+		specificTimeStr, err := specificTimePrompt.Run()
+		if err != nil {
+			return time.Time{}, err
+		}
+		selectedTime, err = time.Parse("2006-01-02 15:04:05", specificTimeStr)
+		if err != nil {
+			return time.Time{}, err
+		}
+		if addDuration > 0 {
+			selectedTime = selectedTime.Add(addDuration)
+		}
+	}
+	return selectedTime, nil
 }
 
 func Prompt[T any](data T, namePrefix string) (T, error) {

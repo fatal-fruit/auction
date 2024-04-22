@@ -8,8 +8,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
 )
@@ -43,39 +45,89 @@ func NewAuctionCmd() *cobra.Command {
 				return err
 			}
 
-			if args[0] == "" || args[1] == "" {
+			if args[1] == "" {
 				return fmt.Errorf("metadata, and deposit cannot be empty")
 			}
 
-			auctionType, err := PromptAuctionType()
+			auctionType, err := PromptAuctionType(clientCtx.Codec)
 			if err != nil {
 				return err
 			}
 
 			var msg sdk.Msg
+			var auctionMetadata *at.ReserveAuctionMetadata
 
 			switch auctionType {
-			case "ReserveAuction":
-				auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[0])
-				if err != nil {
-					return err
-				}
+			case "fatal_fruit.auction.v1.Auction":
+				if args[0] == "" {
+					auctionMetadata, err = PromptAuctionMetadata()
+					if err != nil {
+						return err
+					}
+					deposit, err := sdk.ParseCoinsNormalized(args[1])
+					if err != nil {
+						return err
+					}
 
-				deposit, err := sdk.ParseCoinsNormalized(args[1])
-				if err != nil {
-					return err
-				}
+					owner := clientCtx.GetFromAddress().String()
 
-				owner := clientCtx.GetFromAddress().String()
+					msg := auctiontypes.MsgNewAuction{
+						Owner:       owner,
+						AuctionType: auctionType,
+						Deposit:     deposit,
+					}
 
-				msg := auctiontypes.MsgNewAuction{
-					Owner:       owner,
-					AuctionType: auctionType,
-					Deposit:     deposit,
-				}
+					fmt.Printf("auctionMetadata check: %+v\n", auctionMetadata)
 
-				if err = msg.SetMetadata(auctionMetadata); err != nil {
-					return err
+					md, err := types.NewAnyWithValue(auctionMetadata)
+					if err != nil {
+						return err
+					}
+
+					msg.AuctionMetadata = md
+
+					if err = msg.SetMetadata(auctionMetadata); err != nil {
+						return err
+					}
+
+				} else {
+					metadata, err := parseAuctionMetadata(clientCtx.Codec, args[0])
+					if err != nil {
+						return err
+					}
+
+					var ok bool
+					auctionMetadata, ok = metadata.(*at.ReserveAuctionMetadata)
+					if !ok {
+						return fmt.Errorf("metadata is not of type *at.ReserveAuctionMetadata")
+					}
+
+					if err != nil {
+						return err
+					}
+
+					deposit, err := sdk.ParseCoinsNormalized(args[1])
+					if err != nil {
+						return err
+					}
+
+					owner := clientCtx.GetFromAddress().String()
+
+					msg := auctiontypes.MsgNewAuction{
+						Owner:       owner,
+						AuctionType: auctionType,
+						Deposit:     deposit,
+					}
+
+					md, err := types.NewAnyWithValue(auctionMetadata)
+					if err != nil {
+						return err
+					}
+					msg.AuctionMetadata = md
+
+					if err = msg.SetMetadata(auctionMetadata); err != nil {
+						return err
+					}
 				}
 
 			default:
@@ -137,6 +189,7 @@ func BidCmd() *cobra.Command {
 			$ %s tx %s bid <auction-id> <deposit> --from <sender> --chain-id <chain-id>`, version.AppName, auctiontypes.ModuleName),
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
+
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
