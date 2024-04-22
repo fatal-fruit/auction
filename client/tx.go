@@ -2,13 +2,14 @@ package client
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/codec/types"
+	ct "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	at "github.com/fatal-fruit/auction/auctiontypes"
@@ -54,8 +55,8 @@ func NewAuctionCmd() *cobra.Command {
 				return err
 			}
 
-			var msg sdk.Msg
 			var auctionMetadata *at.ReserveAuctionMetadata
+			var msg *auctiontypes.MsgNewAuction
 
 			switch auctionType {
 			case "fatal_fruit.auction.v1.Auction":
@@ -71,15 +72,15 @@ func NewAuctionCmd() *cobra.Command {
 
 					owner := clientCtx.GetFromAddress().String()
 
-					msg := auctiontypes.MsgNewAuction{
+					msg = &auctiontypes.MsgNewAuction{
 						Owner:       owner,
 						AuctionType: auctionType,
 						Deposit:     deposit,
 					}
 
-					fmt.Printf("auctionMetadata check: %+v\n", auctionMetadata)
+					fmt.Printf("auctionMetadata: %+v\n", auctionMetadata)
 
-					md, err := types.NewAnyWithValue(auctionMetadata)
+					md, err := ct.NewAnyWithValue(auctionMetadata)
 					if err != nil {
 						return err
 					}
@@ -96,14 +97,14 @@ func NewAuctionCmd() *cobra.Command {
 						return err
 					}
 
+					if err := validateReserveAuctionMetadata(metadata); err != nil {
+						log.Fatalf("Validation failed: %v", err)
+					}
+
 					var ok bool
 					auctionMetadata, ok = metadata.(*at.ReserveAuctionMetadata)
 					if !ok {
 						return fmt.Errorf("metadata is not of type *at.ReserveAuctionMetadata")
-					}
-
-					if err != nil {
-						return err
 					}
 
 					deposit, err := sdk.ParseCoinsNormalized(args[1])
@@ -113,13 +114,13 @@ func NewAuctionCmd() *cobra.Command {
 
 					owner := clientCtx.GetFromAddress().String()
 
-					msg := auctiontypes.MsgNewAuction{
+					msg = &auctiontypes.MsgNewAuction{
 						Owner:       owner,
 						AuctionType: auctionType,
 						Deposit:     deposit,
 					}
 
-					md, err := types.NewAnyWithValue(auctionMetadata)
+					md, err := ct.NewAnyWithValue(auctionMetadata)
 					if err != nil {
 						return err
 					}

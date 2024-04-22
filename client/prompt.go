@@ -95,7 +95,21 @@ func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
 		ReservePrice: reservePrice,
 	}
 
+	if err := validateReserveAuctionMetadata(metadata); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("metadata: %+v\n", metadata)
+
 	return metadata, nil
+}
+
+func validateReserveAuctionMetadata(metadata interface{}) error {
+	_, ok := metadata.(*auctiontypes.ReserveAuctionMetadata)
+	if !ok {
+		return fmt.Errorf("metadata is not of type *auctiontypes.ReserveAuctionMetadata")
+	}
+	return nil
 }
 
 func promptForTime(label string, addDuration time.Duration) (time.Time, error) {
