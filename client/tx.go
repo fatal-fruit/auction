@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -91,6 +92,10 @@ func NewAuctionCmd() *cobra.Command {
 						return err
 					}
 
+					fmt.Printf("auction : %+v\n", msg)
+
+					return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+
 				} else {
 					metadata, err := parseAuctionMetadata(clientCtx.Codec, args[0])
 					if err != nil {
@@ -129,12 +134,13 @@ func NewAuctionCmd() *cobra.Command {
 					if err = msg.SetMetadata(auctionMetadata); err != nil {
 						return err
 					}
+
+					return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 				}
 
 			default:
 				return fmt.Errorf("unsupported auction type: %s", auctionType)
 			}
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
@@ -149,7 +155,7 @@ func StartAuctionCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Short: "start auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
-			$ %s tx %s start-auction <auction-id> --from <sender> --chain-id <chain-id>`,
+            $ %s tx %s start-auction <auction-id> --from <sender> --chain-id <chain-id>`,
 			version.AppName, auctiontypes.ModuleName),
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -162,23 +168,16 @@ func StartAuctionCmd() *cobra.Command {
 				return fmt.Errorf("auction id cannot be empty")
 			}
 
-			if args[1] == "" {
-				return fmt.Errorf("owner cannot be empty")
-			}
-
 			auctionId, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("unable to parse auction id %s", args[0])
 			}
 
-			owner, err := sdk.AccAddressFromBech32(args[1])
-			if err != nil {
-				return fmt.Errorf("unable to parse owner address %s", args[1])
-			}
+			owner := clientCtx.GetFromAddress().String()
 
 			msg := auctiontypes.MsgStartAuction{
-				Owner: owner.String(),
 				Id:    auctionId,
+				Owner: owner,
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
@@ -318,5 +317,27 @@ func CancelAuctionCmd() *cobra.Command {
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+func QueryAllAuctionsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "all-auctions",
+		Short: "Query all auctions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := auctiontypes.NewQueryClient(clientCtx)
+			res, err := queryClient.AllAuctions(context.Background(), &auctiontypes.QueryAllAuctionsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
 	return cmd
 }
