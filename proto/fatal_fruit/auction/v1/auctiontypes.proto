@@ -48,7 +48,7 @@ message ReserveAuctionMetadata {
 
 message ReserveAuction {
   option (cosmos_proto.implements_interface) = "fatal_fruit.auction.v1.Auction";
-  option (amino.name)                        = "cosmos-sdk/Auction";
+  option (amino.name)                        = "cosmos-sdk/ReserveAuction";
 
   uint64 id = 1;
   string status = 2;
