@@ -49,13 +49,13 @@ func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
 	//
 
 	promptDuration := promptui.Prompt{
-		Label: "Duration (in seconds)",
+		Label: "Duration (in days)",
 	}
 	durationStr, err := promptDuration.Run()
 	if err != nil {
 		return nil, err
 	}
-	duration, err := time.ParseDuration(durationStr + "s")
+	duration, err := time.ParseDuration(durationStr + "h")
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
 	}
 
 	metadata := &auctiontypes.ReserveAuctionMetadata{
-		Duration: duration,
+		Duration:     duration,
 		ReservePrice: reservePrice,
 	}
 

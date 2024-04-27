@@ -37,6 +37,7 @@ type AuctionResolver interface {
 	HasType(key string) bool
 	GetHandler(key string) (h AuctionHandler)
 	Seal()
+	ListTypes() []string
 }
 
 type auctionResolver struct {

@@ -24,6 +24,11 @@ func NewReserveAuctionHandler(es types.EscrowService, bk types.BankKeeper) *Rese
 }
 
 func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, am types.AuctionMetadata) (types.Auction, error) {
+
+	// if _, ok := am.(types.Auction); !ok {
+	//     return nil, fmt.Errorf("provided data does not implement fatal_fruit.auction.v1.Auction interface")
+	// }
+
 	md, ok := am.(proto.Message)
 	if !ok {
 		return &ReserveAuction{}, fmt.Errorf("%T does not implement proto.Message", md)

@@ -1,0 +1,8 @@
+{
+	"@type": "/fatal_fruit.auction.v1.ReserveAuctionMetadata",
+	"duration": "1000000ms",  
+		"reserve_price": {
+			"denom":"stake",
+			"amount":"250"
+		}
+}

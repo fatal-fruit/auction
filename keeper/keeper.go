@@ -37,7 +37,7 @@ type Keeper struct {
 	CancelledAuctions collections.KeySet[uint64]
 
 	// Auction Type Registry
-	resolver auctiontypes.AuctionResolver
+	Resolver auctiontypes.AuctionResolver
 }
 
 // Todo: pass denom and authority as configs
@@ -83,7 +83,7 @@ func NewKeeper(cdc codec.BinaryCodec, addressCodec address.Codec, storeService s
 }
 
 func (k *Keeper) SetAuctionTypesResolver(resolver auctiontypes.AuctionResolver) {
-	k.resolver = resolver
+	k.Resolver = resolver
 }
 
 func (k *Keeper) GetAuthority() string {

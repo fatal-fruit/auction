@@ -24,54 +24,64 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*a
 	var md at.AuctionMetadata
 	err := ms.k.cdc.UnpackAny(msg.GetAuctionMetadata(), &md)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error serializing auction metadata")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error serializing auction metadata: %v", err)
 	}
+
+	types := ms.k.Resolver.ListTypes()
 
 	auction, err := ms.k.CreateAuction(goCtx, msg.AuctionType, owner, md)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction: %v, currenttype: %v, available types: %v", err, msg.AuctionType, types)
 	}
 
 	err = ms.k.bk.SendCoinsFromAccountToModule(goCtx, owner, at.ModuleName, msg.Deposit)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error crediting auction deposit")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("failed to credit auction deposit for owner %s in module %s with deposit %s: %v", owner, at.ModuleName, msg.Deposit, err)
 	}
 
 	ms.k.Logger().Info(auction.String())
 	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 	if err != nil {
 		// TODO: Rollback deposit
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction: %v", err)
 	}
 
 	hasAuctions, err := ms.k.OwnerAuctions.Has(goCtx, owner)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, err
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error retrieving owner auctions: %v", err)
 	}
+
 	var oa at.OwnerAuctions
+
+	if !hasAuctions {
+		oa = at.OwnerAuctions{Ids: []uint64{}}
+	}
+
 	if hasAuctions {
 		oa, err = ms.k.OwnerAuctions.Get(goCtx, owner)
 		if err != nil {
-			return &at.MsgNewAuctionResponse{}, err
-
+			return &at.MsgNewAuctionResponse{}, fmt.Errorf("error retrieving owner auctions: %v", err)
 		}
 	}
+
 	oa.Ids = append(oa.Ids, auction.GetId())
 
 	// Set Auctions by Owner
 	err = ms.k.OwnerAuctions.Set(goCtx, owner, oa)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, err
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error setting owner auctions: %v", err)
 	}
 
 	// Push auction to ActiveAuction Queue
 	err = ms.k.ActiveAuctions.Set(goCtx, auction.GetId())
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, err
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error setting Active auctions: %v", err)
 	}
 
+	id := auction.GetId()
+
 	return &at.MsgNewAuctionResponse{
-		Id: auction.GetId(),
+		Id: id,
 	}, nil
 }
 
