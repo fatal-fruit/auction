@@ -84,6 +84,9 @@ func (ar *auctionResolver) AddType(key string, h AuctionHandler) AuctionResolver
 
 // HasType returns true if the auction type handler has been registered.
 func (ar *auctionResolver) HasType(key string) bool {
+	if ar.handlers == nil {
+		return false
+	}
 	return ar.handlers[key] != nil
 }
 

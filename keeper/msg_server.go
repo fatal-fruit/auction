@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	at "github.com/fatal-fruit/auction/types"
@@ -120,29 +121,59 @@ func (ms msgServer) StartAuction(goCtx context.Context, msg *at.MsgStartAuction)
 }
 
 func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNewBidResponse, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered in NewBid: %v", r)
+		}
+	}()
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	// get auction from active auctions
+	owner := sdk.MustAccAddressFromBech32(msg.Owner)
+
+	if err := ms.k.Validate(); err != nil {
+    return nil, fmt.Errorf("keeper validation error: %v", err)
+    }
+
 	hasAuction, err := ms.k.ActiveAuctions.Has(goCtx, msg.GetAuctionId())
 	if err != nil {
-		return &at.MsgNewBidResponse{}, err
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error checking active auctions for auction ID %d: %v", msg.GetAuctionId(), err)
 	}
-	if hasAuction {
-		auction, err := ms.k.Auctions.Get(goCtx, msg.GetAuctionId())
-		if err != nil {
-			return &at.MsgNewBidResponse{}, err
-		}
+	if !hasAuction {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("invalid auction ID %d: auction does not exist or is not active", msg.GetAuctionId())
+	}
+	auction, err := ms.k.Auctions.Get(goCtx, msg.GetAuctionId())
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error retrieving auction with ID %d: %v", msg.GetAuctionId(), err)
+	}
 
-		auction, err = ms.k.SubmitBid(ctx, auction.GetType(), auction, msg)
-		if err != nil {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("error creating auction")
-		}
+	if auction == nil {
+		log.Printf("Auction object is nil")
+		return &at.MsgNewBidResponse{}, fmt.Errorf("auction object is nil")
+	}
 
-		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
-		if err != nil {
-			return &at.MsgNewBidResponse{}, err
-		}
-	} else {
-		return &at.MsgNewBidResponse{}, fmt.Errorf("invalid auction id")
+	if auction.GetType() == "" {
+		log.Printf("Auction type is empty")
+		return &at.MsgNewBidResponse{}, fmt.Errorf("auction type is empty")
+	}
+
+	if msg == nil {
+		log.Printf("Message object is nil")
+		return &at.MsgNewBidResponse{}, fmt.Errorf("msg object is nil")
+	}
+
+	err = ms.k.bk.SendCoinsFromAccountToModule(ctx, owner, at.ModuleName, sdk.NewCoins(msg.BidAmount))
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("failed to transfer funds: %v", err)
+	}
+
+	auction, err = ms.k.SubmitBid(ctx, auction.GetType(), auction, msg)
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error submitting bid for auction type %v: %v", auction.GetType(), err)
+	}
+
+	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error updating auction with ID %d in store: %v", auction.GetId(), err)
 	}
 
 	return &at.MsgNewBidResponse{}, nil

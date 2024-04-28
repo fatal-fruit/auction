@@ -309,3 +309,28 @@ func (k *Keeper) GetAllAuctions(ctx sdk.Context) ([]auctiontypes.Auction, error)
 	//return auctions
 	return nil, nil
 }
+
+func (k *Keeper) Validate() error {
+    if k.cdc == nil {
+        return fmt.Errorf("Codec (cdc) is not initialized")
+    }
+    if k.addressCodec == nil {
+        return fmt.Errorf("AddressCodec is not initialized")
+    }
+    if k.authority == "" {
+        return fmt.Errorf("Authority is not initialized")
+    }
+    if k.ak == nil {
+        return fmt.Errorf("AccountKeeper is not initialized")
+    }
+    if k.bk == nil {
+        return fmt.Errorf("BankKeeper is not initialized")
+    }
+    if k.defaultDenom == "" {
+        return fmt.Errorf("DefaultDenom is not initialized")
+    }
+    if k.logger == nil {
+        return fmt.Errorf("Logger is not initialized")
+    }
+    return nil
+}

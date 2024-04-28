@@ -41,8 +41,16 @@ func (k *Keeper) SubmitBid(ctx context.Context, auctionType string, auction auct
 	}
 
 	handler := k.Resolver.GetHandler(auctionType)
+	if handler == nil {
+		return nil, fmt.Errorf("no handler found for auction type %s", auctionType)
+	}
 
-	return handler.SubmitBid(ctx, auction, bidMessage)
+	auction, err := handler.SubmitBid(ctx, auction, bidMessage)
+	if err != nil {
+		return nil, fmt.Errorf("error submitting bid for auction type %s: %v", auctionType, err)
+	}
+
+	return auction, nil
 }
 
 func (k *Keeper) ExecuteAuction(ctx context.Context, auction auctiontypes.Auction) error {
