@@ -3,6 +3,7 @@ package auctiontypes
 import (
 	"context"
 	"fmt"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -79,6 +80,12 @@ func (ah *ReserveAuctionHandler) SubmitBid(ctx context.Context, auction types.Au
 		}
 	default:
 		return nil, fmt.Errorf("invalid auction metadata type")
+	}
+
+	log.Printf("Checking if any bids have been recorded: auctionId=%d", auction.GetId())
+
+	if len(auction.GetAuctionMetadata().(*ReserveAuctionMetadata).Bids) == 0 {
+		return nil, fmt.Errorf("no bids recorded after submission")
 	}
 
 	return auction, nil

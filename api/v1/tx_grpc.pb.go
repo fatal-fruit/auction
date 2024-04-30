@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_NewAuction_FullMethodName   = "/fatal_fruit.auction.v1.Msg/NewAuction"
-	Msg_StartAuction_FullMethodName = "/fatal_fruit.auction.v1.Msg/StartAuction"
-	Msg_NewBid_FullMethodName       = "/fatal_fruit.auction.v1.Msg/NewBid"
-	Msg_Exec_FullMethodName         = "/fatal_fruit.auction.v1.Msg/Exec"
+	Msg_NewAuction_FullMethodName    = "/fatal_fruit.auction.v1.Msg/NewAuction"
+	Msg_StartAuction_FullMethodName  = "/fatal_fruit.auction.v1.Msg/StartAuction"
+	Msg_NewBid_FullMethodName        = "/fatal_fruit.auction.v1.Msg/NewBid"
+	Msg_Exec_FullMethodName          = "/fatal_fruit.auction.v1.Msg/Exec"
+	Msg_CancelAuction_FullMethodName = "/fatal_fruit.auction.v1.Msg/CancelAuction"
 )
 
 // MsgClient is the client API for Msg service.
@@ -37,6 +38,8 @@ type MsgClient interface {
 	NewBid(ctx context.Context, in *MsgNewBid, opts ...grpc.CallOption) (*MsgNewBidResponse, error)
 	// Exec executes an auction, distributing funds and finalizing the auction.
 	Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.CallOption) (*MsgExecAuctionResponse, error)
+	// CancelAuction cancels an auction, preventing any further bids and distributing funds to the bidder.
+	CancelAuction(ctx context.Context, in *MsgCancelAuction, opts ...grpc.CallOption) (*MsgCancelAuctionResponse, error)
 }
 
 type msgClient struct {
@@ -83,6 +86,15 @@ func (c *msgClient) Exec(ctx context.Context, in *MsgExecAuction, opts ...grpc.C
 	return out, nil
 }
 
+func (c *msgClient) CancelAuction(ctx context.Context, in *MsgCancelAuction, opts ...grpc.CallOption) (*MsgCancelAuctionResponse, error) {
+	out := new(MsgCancelAuctionResponse)
+	err := c.cc.Invoke(ctx, Msg_CancelAuction_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -95,6 +107,8 @@ type MsgServer interface {
 	NewBid(context.Context, *MsgNewBid) (*MsgNewBidResponse, error)
 	// Exec executes an auction, distributing funds and finalizing the auction.
 	Exec(context.Context, *MsgExecAuction) (*MsgExecAuctionResponse, error)
+	// CancelAuction cancels an auction, preventing any further bids and distributing funds to the bidder.
+	CancelAuction(context.Context, *MsgCancelAuction) (*MsgCancelAuctionResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -113,6 +127,9 @@ func (UnimplementedMsgServer) NewBid(context.Context, *MsgNewBid) (*MsgNewBidRes
 }
 func (UnimplementedMsgServer) Exec(context.Context, *MsgExecAuction) (*MsgExecAuctionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Exec not implemented")
+}
+func (UnimplementedMsgServer) CancelAuction(context.Context, *MsgCancelAuction) (*MsgCancelAuctionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelAuction not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -199,6 +216,24 @@ func _Msg_Exec_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CancelAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCancelAuction)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CancelAuction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CancelAuction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CancelAuction(ctx, req.(*MsgCancelAuction))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -221,6 +256,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Exec",
 			Handler:    _Msg_Exec_Handler,
+		},
+		{
+			MethodName: "CancelAuction",
+			Handler:    _Msg_CancelAuction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

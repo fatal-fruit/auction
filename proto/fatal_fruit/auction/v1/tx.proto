@@ -27,6 +27,9 @@ service Msg {
 
   // Exec executes an auction, distributing funds and finalizing the auction.
   rpc Exec(MsgExecAuction) returns (MsgExecAuctionResponse);
+
+  // CancelAuction cancels an auction, preventing any further bids and distributing funds to the bidder.
+  rpc CancelAuction(MsgCancelAuction) returns (MsgCancelAuctionResponse);
 }
 
 // MsgNewAuction represents a request to create a new auction.

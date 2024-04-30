@@ -49,7 +49,7 @@ func PromptAuctionMetadata() (*auctiontypes.ReserveAuctionMetadata, error) {
 	//
 
 	promptDuration := promptui.Prompt{
-		Label: "Duration (in days)",
+		Label: "Duration (in hours)",
 	}
 	durationStr, err := promptDuration.Run()
 	if err != nil {

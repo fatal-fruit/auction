@@ -9,29 +9,29 @@ import (
 )
 
 func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sdk.AccAddress, md auctiontypes.AuctionMetadata) (auctiontypes.Auction, error) {
-    // Check if keeper has registered auction type
-    if !k.Resolver.HasType(auctionType) {
-        return nil, fmt.Errorf("keeper: auction type %s is not registered", auctionType)
-    }
+	// Check if keeper has registered auction type
+	if !k.Resolver.HasType(auctionType) {
+		return nil, fmt.Errorf("keeper: auction type %s is not registered", auctionType)
+	}
 
-    handler := k.Resolver.GetHandler(auctionType)
-    if handler == nil {
-        return nil, fmt.Errorf("keeper: no handler found for auction type %s", auctionType)
-    }
+	handler := k.Resolver.GetHandler(auctionType)
+	if handler == nil {
+		return nil, fmt.Errorf("keeper: no handler found for auction type %s", auctionType)
+	}
 
-    // Get Next Id
-    id, err := k.IDs.Next(ctx)
-    if err != nil {
-        return nil, fmt.Errorf("keeper: error creating id for auction: %v", err)
-    }
+	// Get Next Id
+	id, err := k.IDs.Next(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("keeper: error creating id for auction: %v", err)
+	}
 
-    auction, err := handler.CreateAuction(ctx, id, md)
-    if err != nil {
-        return nil, fmt.Errorf("keeper: error creating auction with id %d: %v", id, err)
-    }
-    auction.SetOwner(owner)
+	auction, err := handler.CreateAuction(ctx, id, md)
+	if err != nil {
+		return nil, fmt.Errorf("keeper: error creating auction with id %d: %v", id, err)
+	}
+	auction.SetOwner(owner)
 
-    return auction, nil
+	return auction, nil
 }
 
 func (k *Keeper) SubmitBid(ctx context.Context, auctionType string, auction auctiontypes.Auction, bidMessage *auctiontypes.MsgNewBid) (auctiontypes.Auction, error) {
@@ -61,4 +61,22 @@ func (k *Keeper) ExecuteAuction(ctx context.Context, auction auctiontypes.Auctio
 	handler := k.Resolver.GetHandler(auction.GetType())
 
 	return handler.ExecAuction(ctx, auction)
+}
+
+// CancelAuction marks an auction as cancelled by its ID.
+func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	_, err := k.Auctions.Get(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("auction with ID %d not found: %v", auctionId, err)
+	}
+
+	err = k.CancelledAuctions.Set(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("failed to cancel auction with ID %d: %v", auctionId, err)
+	}
+
+	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
+	return nil
 }

@@ -120,6 +120,9 @@ func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 		if err != nil {
 			return true, err
 		}
+
+		logger.Info(fmt.Sprintf("Processing-Active :: Number of  bids: %v", auction.HasBids()))
+
 		// TODO: Auction checks itself for expiration
 		if auction.IsExpired(ctx.BlockTime()) {
 			expired = append(expired, auctionId)
@@ -133,13 +136,14 @@ func (k *Keeper) ProcessActiveAuctions(goCtx context.Context) error {
 	}
 	logger.Info(fmt.Sprintf("Processing-Active :: Number of active auctions: %d", numActive))
 	for _, exp := range expired {
-		err = k.ActiveAuctions.Remove(goCtx, exp)
+
+		err = k.ExpiredAuctions.Set(goCtx, exp)
 		if err != nil {
 			return err
 		}
 		logger.Info(fmt.Sprintf("Processing-Active :: Removed Auction ID: %d", exp))
 
-		err = k.ExpiredAuctions.Set(goCtx, exp)
+		err = k.ActiveAuctions.Remove(goCtx, exp)
 		if err != nil {
 			return err
 		}
@@ -154,19 +158,36 @@ func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 	logger.Info("Processing-Expired :: Checking for expired auctions")
 	var numExpired int
 
-	var pending []uint64
-	var cancelled []uint64
 	err := k.ExpiredAuctions.Walk(goCtx, nil, func(auctionId uint64) (stop bool, err error) {
 		auction, err := k.Auctions.Get(ctx, auctionId)
 		if err != nil {
 			return true, err
 		}
+		logger.Info("Auction details", "auctionId:", auctionId, "hasBids:", auction.HasBids())
 
-		// TODO: Auction executes own logic for this
 		if auction.HasBids() {
-			pending = append(pending, auctionId)
+			err = k.PendingAuctions.Set(goCtx, auctionId)
+			if err != nil {
+				logger.Error("Failed to set auction to pending", "auctionId", auctionId, "error", err)
+				return true, err
+			}
+			logger.Info(fmt.Sprintf("Successfully moved Auction ID with bids to pending: %d", auctionId))
+
+			err = k.ExpiredAuctions.Remove(goCtx, auctionId)
+			if err != nil {
+				logger.Error("Failed to remove auction from expired", "auctionId", auctionId, "error", err)
+				return true, err
+			}
 		} else {
-			cancelled = append(cancelled, auctionId)
+			err = k.ExpiredAuctions.Remove(goCtx, auctionId)
+			if err != nil {
+				return true, err
+			}
+			err = k.CancelledAuctions.Set(goCtx, auctionId)
+			if err != nil {
+				return true, err
+			}
+			logger.Info(fmt.Sprintf("Processing-Expired :: Moved Auction ID without bids to cancelled: %d", auctionId))
 		}
 		numExpired++
 		return false, nil
@@ -174,40 +195,7 @@ func (k *Keeper) ProcessExpiredAuctions(goCtx context.Context) error {
 	if err != nil {
 		return err
 	}
-	logger.Info(fmt.Sprintf("Processing-Expired :: Number of expired auctions: %d", numExpired))
-
-	// If no bids -> cancelled
-	logger.Info("Processing-Expired :: Checking for cancelled auctions")
-	for _, c := range cancelled {
-		err = k.ExpiredAuctions.Remove(goCtx, c)
-		if err != nil {
-			return err
-		}
-		logger.Info(fmt.Sprintf("Processing-Expired :: Removed Auction ID without bids from expired: %d", c))
-
-		err = k.CancelledAuctions.Set(goCtx, c)
-		if err != nil {
-			return err
-		}
-		logger.Info(fmt.Sprintf("Processing-Expired :: Pushed Auction ID without bids to cancelled: %d", c))
-
-	}
-	// If at least 1 bid -> pending
-	logger.Info("Processing-Expired :: Checking for pending auctions")
-	for _, p := range pending {
-		err = k.ExpiredAuctions.Remove(goCtx, p)
-		if err != nil {
-			return err
-		}
-		logger.Info(fmt.Sprintf("Processing-Expired :: Removed Auction ID with bids from expired: %d", p))
-
-		err = k.PendingAuctions.Set(goCtx, p)
-		if err != nil {
-			return err
-		}
-		logger.Info(fmt.Sprintf("Processing-Expired :: Pushed Auction ID with bids to pending: %d", p))
-
-	}
+	logger.Info(fmt.Sprintf("Processing-Expired :: Number of expired auctions processed: %d", numExpired))
 	return nil
 }
 
@@ -277,60 +265,40 @@ func (k *Keeper) GetCancelledAuctions(goCtx context.Context) error {
 	return nil
 }
 
-// CancelAuction marks an auction as cancelled by its ID.
-func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	_, err := k.Auctions.Get(sdkCtx, auctionId)
-	if err != nil {
-		return fmt.Errorf("auction with ID %d not found: %v", auctionId, err)
-	}
-
-	err = k.CancelledAuctions.Set(sdkCtx, auctionId)
-	if err != nil {
-		return fmt.Errorf("failed to cancel auction with ID %d: %v", auctionId, err)
-	}
-
-	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
-	return nil
-}
-
 func (k *Keeper) GetAllAuctions(ctx sdk.Context) ([]auctiontypes.Auction, error) {
-	//var auctions []auctiontypes.ReserveAuction
-	//
-	//err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.ReserveAuction) (stop bool, err error) {
-	//	auctions = append(auctions, auction)
-	//	return false, nil
-	//})
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//return auctions
-	return nil, nil
+	var auctions []auctiontypes.Auction
+
+	err := k.Auctions.Walk(ctx, nil, func(id uint64, auction auctiontypes.Auction) (stop bool, err error) {
+		auctions = append(auctions, auction)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return auctions, nil
 }
 
 func (k *Keeper) Validate() error {
-    if k.cdc == nil {
-        return fmt.Errorf("Codec (cdc) is not initialized")
-    }
-    if k.addressCodec == nil {
-        return fmt.Errorf("AddressCodec is not initialized")
-    }
-    if k.authority == "" {
-        return fmt.Errorf("Authority is not initialized")
-    }
-    if k.ak == nil {
-        return fmt.Errorf("AccountKeeper is not initialized")
-    }
-    if k.bk == nil {
-        return fmt.Errorf("BankKeeper is not initialized")
-    }
-    if k.defaultDenom == "" {
-        return fmt.Errorf("DefaultDenom is not initialized")
-    }
-    if k.logger == nil {
-        return fmt.Errorf("Logger is not initialized")
-    }
-    return nil
+	if k.cdc == nil {
+		return fmt.Errorf("Codec (cdc) is not initialized")
+	}
+	if k.addressCodec == nil {
+		return fmt.Errorf("AddressCodec is not initialized")
+	}
+	if k.authority == "" {
+		return fmt.Errorf("Authority is not initialized")
+	}
+	if k.ak == nil {
+		return fmt.Errorf("AccountKeeper is not initialized")
+	}
+	if k.bk == nil {
+		return fmt.Errorf("BankKeeper is not initialized")
+	}
+	if k.defaultDenom == "" {
+		return fmt.Errorf("DefaultDenom is not initialized")
+	}
+	if k.logger == nil {
+		return fmt.Errorf("Logger is not initialized")
+	}
+	return nil
 }

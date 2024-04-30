@@ -131,8 +131,8 @@ func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNew
 	owner := sdk.MustAccAddressFromBech32(msg.Owner)
 
 	if err := ms.k.Validate(); err != nil {
-    return nil, fmt.Errorf("keeper validation error: %v", err)
-    }
+		return nil, fmt.Errorf("keeper validation error: %v", err)
+	}
 
 	hasAuction, err := ms.k.ActiveAuctions.Has(goCtx, msg.GetAuctionId())
 	if err != nil {
@@ -212,4 +212,28 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 	}
 
 	return &at.MsgExecAuctionResponse{}, nil
+}
+
+func (ms msgServer) CancelAuction(goCtx context.Context, msg *at.MsgCancelAuction) (*at.MsgCancelAuctionResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	auction, err := ms.k.Auctions.Get(ctx, msg.GetAuctionId())
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving auction: %v", err)
+	}
+	if auction == nil {
+		return nil, fmt.Errorf("auction not found")
+	}
+
+	// Additional checks can be implemented here, such as verifying the sender
+	err = ms.k.CancelAuction(ctx, auction.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("error cancelling auction: %v", err)
+	}
+
+	err = ms.k.ActiveAuctions.Remove(ctx, auction.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("error removing auction from active auctions: %v", err)
+	}
+	
+	return &at.MsgCancelAuctionResponse{}, nil
 }
