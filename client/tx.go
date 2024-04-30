@@ -1,26 +1,31 @@
 package client
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	ct "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
+	at "github.com/fatal-fruit/auction/auctiontypes"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 	"github.com/spf13/cobra"
-	"strconv"
-	"strings"
 )
 
 // NewAuctionCmd creates a CLI command for MsgNewAuction.
 func NewAuctionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-auction [type] [auction-json-file] [deposit] --from [sender]",
-		Args:  cobra.ExactArgs(3),
+		Use:   "create-auction [auction-json-file] [deposit] --from [sender]",
+		Args:  cobra.ExactArgs(2),
 		Short: "create new auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
-			$ %s tx %s create-auction <type> auction_metadata.json <deposit> --from <sender> --chain-id <chain-id>
+			$ %s tx %s create-auction auction_metadata.json <deposit> --from <sender> --chain-id <chain-id>
 		
 		Where auction_type is the type url of the auction
 		ex: /fatal_fruit.auction.v1.ReserveAuctionMetadata
@@ -42,41 +47,100 @@ func NewAuctionCmd() *cobra.Command {
 				return err
 			}
 
-			if args[0] == "" || args[1] == "" || args[2] == "" {
-				return fmt.Errorf("auction type, metadata, and deposit cannot be empty")
+			if args[1] == "" {
+				return fmt.Errorf("metadata, and deposit cannot be empty")
 			}
 
-			// Validate auction type
-			auctionType, err := parseAuctionType(clientCtx.Codec, args[0])
+			auctionType, err := PromptAuctionType(clientCtx.Codec)
 			if err != nil {
 				return err
 			}
 
-			// Parse auction metadata
-			auctionMetadata, err := parseAuctionMetadata(clientCtx.Codec, args[1])
-			if err != nil {
-				return err
+			var auctionMetadata *at.ReserveAuctionMetadata
+			var msg *auctiontypes.MsgNewAuction
+
+			switch auctionType {
+			case "fatal_fruit.auction.v1.Auction":
+				if args[0] == "" {
+					auctionMetadata, err = PromptAuctionMetadata()
+					if err != nil {
+						return err
+					}
+					deposit, err := sdk.ParseCoinsNormalized(args[1])
+					if err != nil {
+						return err
+					}
+
+					owner := clientCtx.GetFromAddress().String()
+
+					msg = &auctiontypes.MsgNewAuction{
+						Owner:       owner,
+						AuctionType: auctionType,
+						Deposit:     deposit,
+					}
+
+					fmt.Printf("auctionMetadata: %+v\n", auctionMetadata)
+
+					md, err := ct.NewAnyWithValue(auctionMetadata)
+					if err != nil {
+						return err
+					}
+
+					msg.AuctionMetadata = md
+
+					if err = msg.SetMetadata(auctionMetadata); err != nil {
+						return err
+					}
+
+					fmt.Printf("auction : %+v\n", msg)
+
+					return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+
+				} else {
+					metadata, err := parseAuctionMetadata(clientCtx.Codec, args[0])
+					if err != nil {
+						return err
+					}
+
+					if err := validateReserveAuctionMetadata(metadata); err != nil {
+						log.Fatalf("Validation failed: %v", err)
+					}
+
+					var ok bool
+					auctionMetadata, ok = metadata.(*at.ReserveAuctionMetadata)
+					if !ok {
+						return fmt.Errorf("metadata is not of type *at.ReserveAuctionMetadata")
+					}
+
+					deposit, err := sdk.ParseCoinsNormalized(args[1])
+					if err != nil {
+						return err
+					}
+
+					owner := clientCtx.GetFromAddress().String()
+
+					msg = &auctiontypes.MsgNewAuction{
+						Owner:       owner,
+						AuctionType: auctionType,
+						Deposit:     deposit,
+					}
+
+					md, err := ct.NewAnyWithValue(auctionMetadata)
+					if err != nil {
+						return err
+					}
+					msg.AuctionMetadata = md
+
+					if err = msg.SetMetadata(auctionMetadata); err != nil {
+						return err
+					}
+
+					return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+				}
+
+			default:
+				return fmt.Errorf("unsupported auction type: %s", auctionType)
 			}
-
-			// Parse deposit
-			deposit, err := sdk.ParseCoinsNormalized(args[2])
-			if err != nil {
-				return err
-			}
-
-			owner := clientCtx.GetFromAddress().String()
-
-			msg := auctiontypes.MsgNewAuction{
-				Owner:       owner,
-				AuctionType: auctionType,
-				Deposit:     deposit,
-			}
-
-			if err = msg.SetMetadata(auctionMetadata); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
 	}
 
@@ -91,7 +155,7 @@ func StartAuctionCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Short: "start auction",
 		Long: strings.TrimSpace(fmt.Sprintf(`
-			$ %s tx %s start-auction <auction-id> --from <sender> --chain-id <chain-id>`,
+            $ %s tx %s start-auction <auction-id> --from <sender> --chain-id <chain-id>`,
 			version.AppName, auctiontypes.ModuleName),
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -104,15 +168,16 @@ func StartAuctionCmd() *cobra.Command {
 				return fmt.Errorf("auction id cannot be empty")
 			}
 
-			owner := clientCtx.GetFromAddress().String()
 			auctionId, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("unable to parse auction id %s", args[0])
 			}
 
+			owner := clientCtx.GetFromAddress().String()
+
 			msg := auctiontypes.MsgStartAuction{
-				Owner: owner,
 				Id:    auctionId,
+				Owner: owner,
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
@@ -132,6 +197,7 @@ func BidCmd() *cobra.Command {
 			$ %s tx %s bid <auction-id> <deposit> --from <sender> --chain-id <chain-id>`, version.AppName, auctiontypes.ModuleName),
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
+
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -251,5 +317,27 @@ func CancelAuctionCmd() *cobra.Command {
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+func QueryAllAuctionsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "all-auctions",
+		Short: "Query all auctions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := auctiontypes.NewQueryClient(clientCtx)
+			res, err := queryClient.AllAuctions(context.Background(), &auctiontypes.QueryAllAuctionsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
 	return cmd
 }

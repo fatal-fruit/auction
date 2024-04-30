@@ -22,6 +22,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgNewBid{},
 		&MsgStartAuction{},
 		&MsgExecAuction{},
+		&MsgCancelAuction{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

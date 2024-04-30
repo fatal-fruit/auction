@@ -33,6 +33,8 @@ var _ = time.Kitchen
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// ReserveAuctionMetadata defines the metadata specific to a reserve auction,
+// including its duration, start and end times, reserve price, and bids.
 type ReserveAuctionMetadata struct {
 	// duration specifies the time duration of the auction.
 	Duration time.Duration `protobuf:"bytes,2,opt,name=duration,proto3,stdduration" json:"duration"`
@@ -128,6 +130,7 @@ func (m *ReserveAuctionMetadata) GetStrategy() *SettleStrategy {
 	return nil
 }
 
+// ReserveAuction represents an auction with a reserve price and specific metadata.
 type ReserveAuction struct {
 	Id          uint64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Status      string                  `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
@@ -204,6 +207,7 @@ func (m *ReserveAuction) GetMetadata() *ReserveAuctionMetadata {
 	return nil
 }
 
+// SettleStrategy defines the strategy used to settle the auction, including details about the escrow contract.
 type SettleStrategy struct {
 	StrategyType string `protobuf:"bytes,1,opt,name=strategy_type,json=strategyType,proto3" json:"strategy_type,omitempty"`
 	// id of escrow contract for auction

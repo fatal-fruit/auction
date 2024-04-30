@@ -2207,6 +2207,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ReserveAuctionMetadata defines the metadata specific to a reserve auction,
+// including its duration, start and end times, reserve price, and bids.
 type ReserveAuctionMetadata struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2293,6 +2295,7 @@ func (x *ReserveAuctionMetadata) GetStrategy() *SettleStrategy {
 	return nil
 }
 
+// ReserveAuction represents an auction with a reserve price and specific metadata.
 type ReserveAuction struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2360,6 +2363,7 @@ func (x *ReserveAuction) GetMetadata() *ReserveAuctionMetadata {
 	return nil
 }
 
+// SettleStrategy defines the strategy used to settle the auction, including details about the escrow contract.
 type SettleStrategy struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

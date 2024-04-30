@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	at "github.com/fatal-fruit/auction/types"
@@ -24,54 +25,64 @@ func (ms msgServer) NewAuction(goCtx context.Context, msg *at.MsgNewAuction) (*a
 	var md at.AuctionMetadata
 	err := ms.k.cdc.UnpackAny(msg.GetAuctionMetadata(), &md)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error serializing auction metadata")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error serializing auction metadata: %v", err)
 	}
+
+	types := ms.k.Resolver.ListTypes()
 
 	auction, err := ms.k.CreateAuction(goCtx, msg.AuctionType, owner, md)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction: %v, currenttype: %v, available types: %v", err, msg.AuctionType, types)
 	}
 
 	err = ms.k.bk.SendCoinsFromAccountToModule(goCtx, owner, at.ModuleName, msg.Deposit)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error crediting auction deposit")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("failed to credit auction deposit for owner %s in module %s with deposit %s: %v", owner, at.ModuleName, msg.Deposit, err)
 	}
 
 	ms.k.Logger().Info(auction.String())
 	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
 	if err != nil {
 		// TODO: Rollback deposit
-		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction")
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error creating auction: %v", err)
 	}
 
 	hasAuctions, err := ms.k.OwnerAuctions.Has(goCtx, owner)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, err
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error retrieving owner auctions: %v", err)
 	}
+
 	var oa at.OwnerAuctions
+
+	if !hasAuctions {
+		oa = at.OwnerAuctions{Ids: []uint64{}}
+	}
+
 	if hasAuctions {
 		oa, err = ms.k.OwnerAuctions.Get(goCtx, owner)
 		if err != nil {
-			return &at.MsgNewAuctionResponse{}, err
-
+			return &at.MsgNewAuctionResponse{}, fmt.Errorf("error retrieving owner auctions: %v", err)
 		}
 	}
+
 	oa.Ids = append(oa.Ids, auction.GetId())
 
 	// Set Auctions by Owner
 	err = ms.k.OwnerAuctions.Set(goCtx, owner, oa)
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, err
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error setting owner auctions: %v", err)
 	}
 
 	// Push auction to ActiveAuction Queue
 	err = ms.k.ActiveAuctions.Set(goCtx, auction.GetId())
 	if err != nil {
-		return &at.MsgNewAuctionResponse{}, err
+		return &at.MsgNewAuctionResponse{}, fmt.Errorf("error setting Active auctions: %v", err)
 	}
 
+	id := auction.GetId()
+
 	return &at.MsgNewAuctionResponse{
-		Id: auction.GetId(),
+		Id: id,
 	}, nil
 }
 
@@ -110,29 +121,59 @@ func (ms msgServer) StartAuction(goCtx context.Context, msg *at.MsgStartAuction)
 }
 
 func (ms msgServer) NewBid(goCtx context.Context, msg *at.MsgNewBid) (*at.MsgNewBidResponse, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered in NewBid: %v", r)
+		}
+	}()
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	// get auction from active auctions
+	owner := sdk.MustAccAddressFromBech32(msg.Owner)
+
+	if err := ms.k.Validate(); err != nil {
+		return nil, fmt.Errorf("keeper validation error: %v", err)
+	}
+
 	hasAuction, err := ms.k.ActiveAuctions.Has(goCtx, msg.GetAuctionId())
 	if err != nil {
-		return &at.MsgNewBidResponse{}, err
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error checking active auctions for auction ID %d: %v", msg.GetAuctionId(), err)
 	}
-	if hasAuction {
-		auction, err := ms.k.Auctions.Get(goCtx, msg.GetAuctionId())
-		if err != nil {
-			return &at.MsgNewBidResponse{}, err
-		}
+	if !hasAuction {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("invalid auction ID %d: auction does not exist or is not active", msg.GetAuctionId())
+	}
+	auction, err := ms.k.Auctions.Get(goCtx, msg.GetAuctionId())
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error retrieving auction with ID %d: %v", msg.GetAuctionId(), err)
+	}
 
-		auction, err = ms.k.SubmitBid(ctx, auction.GetType(), auction, msg)
-		if err != nil {
-			return &at.MsgNewBidResponse{}, fmt.Errorf("error creating auction")
-		}
+	if auction == nil {
+		log.Printf("Auction object is nil")
+		return &at.MsgNewBidResponse{}, fmt.Errorf("auction object is nil")
+	}
 
-		err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
-		if err != nil {
-			return &at.MsgNewBidResponse{}, err
-		}
-	} else {
-		return &at.MsgNewBidResponse{}, fmt.Errorf("invalid auction id")
+	if auction.GetType() == "" {
+		log.Printf("Auction type is empty")
+		return &at.MsgNewBidResponse{}, fmt.Errorf("auction type is empty")
+	}
+
+	if msg == nil {
+		log.Printf("Message object is nil")
+		return &at.MsgNewBidResponse{}, fmt.Errorf("msg object is nil")
+	}
+
+	err = ms.k.bk.SendCoinsFromAccountToModule(ctx, owner, at.ModuleName, sdk.NewCoins(msg.BidAmount))
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("failed to transfer funds: %v", err)
+	}
+
+	auction, err = ms.k.SubmitBid(ctx, auction.GetType(), auction, msg)
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error submitting bid for auction type %v: %v", auction.GetType(), err)
+	}
+
+	err = ms.k.Auctions.Set(goCtx, auction.GetId(), auction)
+	if err != nil {
+		return &at.MsgNewBidResponse{}, fmt.Errorf("error updating auction with ID %d in store: %v", auction.GetId(), err)
 	}
 
 	return &at.MsgNewBidResponse{}, nil
@@ -171,4 +212,28 @@ func (ms msgServer) Exec(goCtx context.Context, msg *at.MsgExecAuction) (*at.Msg
 	}
 
 	return &at.MsgExecAuctionResponse{}, nil
+}
+
+func (ms msgServer) CancelAuction(goCtx context.Context, msg *at.MsgCancelAuction) (*at.MsgCancelAuctionResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	auction, err := ms.k.Auctions.Get(ctx, msg.GetAuctionId())
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving auction: %v", err)
+	}
+	if auction == nil {
+		return nil, fmt.Errorf("auction not found")
+	}
+
+	// Additional checks can be implemented here, such as verifying the sender
+	err = ms.k.CancelAuction(ctx, auction.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("error cancelling auction: %v", err)
+	}
+
+	err = ms.k.ActiveAuctions.Remove(ctx, auction.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("error removing auction from active auctions: %v", err)
+	}
+	
+	return &at.MsgCancelAuctionResponse{}, nil
 }

@@ -3,10 +3,11 @@ package types
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
-	"time"
 )
 
 type Auction interface {
@@ -36,6 +37,7 @@ type AuctionResolver interface {
 	HasType(key string) bool
 	GetHandler(key string) (h AuctionHandler)
 	Seal()
+	ListTypes() []string
 }
 
 type auctionResolver struct {
@@ -82,6 +84,9 @@ func (ar *auctionResolver) AddType(key string, h AuctionHandler) AuctionResolver
 
 // HasType returns true if the auction type handler has been registered.
 func (ar *auctionResolver) HasType(key string) bool {
+	if ar.handlers == nil {
+		return false
+	}
 	return ar.handlers[key] != nil
 }
 
@@ -101,4 +106,13 @@ func (m *MsgNewAuction) SetMetadata(metadata AuctionMetadata) error {
 	}
 	m.AuctionMetadata = md
 	return nil
+}
+
+// ListTypes returns all registered auction types.
+func (ar *auctionResolver) ListTypes() []string {
+	var types []string
+	for key := range ar.handlers {
+		types = append(types, key)
+	}
+	return types
 }

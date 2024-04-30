@@ -3,27 +3,31 @@ package keeper
 import (
 	"context"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auctiontypes "github.com/fatal-fruit/auction/types"
 )
 
 func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sdk.AccAddress, md auctiontypes.AuctionMetadata) (auctiontypes.Auction, error) {
 	// Check if keeper has registered auction type
-	if !k.resolver.HasType(auctionType) {
-		return nil, fmt.Errorf("auction type %s is not registered", auctionType)
+	if !k.Resolver.HasType(auctionType) {
+		return nil, fmt.Errorf("keeper: auction type %s is not registered", auctionType)
 	}
 
-	handler := k.resolver.GetHandler(auctionType)
+	handler := k.Resolver.GetHandler(auctionType)
+	if handler == nil {
+		return nil, fmt.Errorf("keeper: no handler found for auction type %s", auctionType)
+	}
 
 	// Get Next Id
 	id, err := k.IDs.Next(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error creating id for auction")
+		return nil, fmt.Errorf("keeper: error creating id for auction: %v", err)
 	}
 
 	auction, err := handler.CreateAuction(ctx, id, md)
 	if err != nil {
-		return nil, fmt.Errorf("error creating auction")
+		return nil, fmt.Errorf("keeper: error creating auction with id %d: %v", id, err)
 	}
 	auction.SetOwner(owner)
 
@@ -32,21 +36,47 @@ func (k *Keeper) CreateAuction(ctx context.Context, auctionType string, owner sd
 
 func (k *Keeper) SubmitBid(ctx context.Context, auctionType string, auction auctiontypes.Auction, bidMessage *auctiontypes.MsgNewBid) (auctiontypes.Auction, error) {
 	// Message server should not have been able to call SubmitBit without an existing handler
-	if !k.resolver.HasType(auctionType) {
+	if !k.Resolver.HasType(auctionType) {
 		return nil, fmt.Errorf("auction type %s is not registered", auctionType)
 	}
 
-	handler := k.resolver.GetHandler(auctionType)
+	handler := k.Resolver.GetHandler(auctionType)
+	if handler == nil {
+		return nil, fmt.Errorf("no handler found for auction type %s", auctionType)
+	}
 
-	return handler.SubmitBid(ctx, auction, bidMessage)
+	auction, err := handler.SubmitBid(ctx, auction, bidMessage)
+	if err != nil {
+		return nil, fmt.Errorf("error submitting bid for auction type %s: %v", auctionType, err)
+	}
+
+	return auction, nil
 }
 
 func (k *Keeper) ExecuteAuction(ctx context.Context, auction auctiontypes.Auction) error {
-	if !k.resolver.HasType(auction.GetType()) {
+	if !k.Resolver.HasType(auction.GetType()) {
 		return fmt.Errorf("auction type %s is not registered", auction.GetType())
 	}
 
-	handler := k.resolver.GetHandler(auction.GetType())
+	handler := k.Resolver.GetHandler(auction.GetType())
 
 	return handler.ExecAuction(ctx, auction)
+}
+
+// CancelAuction marks an auction as cancelled by its ID.
+func (k *Keeper) CancelAuction(ctx context.Context, auctionId uint64) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	_, err := k.Auctions.Get(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("auction with ID %d not found: %v", auctionId, err)
+	}
+
+	err = k.CancelledAuctions.Set(sdkCtx, auctionId)
+	if err != nil {
+		return fmt.Errorf("failed to cancel auction with ID %d: %v", auctionId, err)
+	}
+
+	k.Logger().Info("Auction cancelled", "auctionId", auctionId)
+	return nil
 }

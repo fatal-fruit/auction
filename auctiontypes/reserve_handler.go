@@ -3,6 +3,8 @@ package auctiontypes
 import (
 	"context"
 	"fmt"
+	"log"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/fatal-fruit/auction/types"
@@ -23,6 +25,11 @@ func NewReserveAuctionHandler(es types.EscrowService, bk types.BankKeeper) *Rese
 }
 
 func (ah *ReserveAuctionHandler) CreateAuction(ctx context.Context, id uint64, am types.AuctionMetadata) (types.Auction, error) {
+
+	// if _, ok := am.(types.Auction); !ok {
+	//     return nil, fmt.Errorf("provided data does not implement fatal_fruit.auction.v1.Auction interface")
+	// }
+
 	md, ok := am.(proto.Message)
 	if !ok {
 		return &ReserveAuction{}, fmt.Errorf("%T does not implement proto.Message", md)
@@ -73,6 +80,12 @@ func (ah *ReserveAuctionHandler) SubmitBid(ctx context.Context, auction types.Au
 		}
 	default:
 		return nil, fmt.Errorf("invalid auction metadata type")
+	}
+
+	log.Printf("Checking if any bids have been recorded: auctionId=%d", auction.GetId())
+
+	if len(auction.GetAuctionMetadata().(*ReserveAuctionMetadata).Bids) == 0 {
+		return nil, fmt.Errorf("no bids recorded after submission")
 	}
 
 	return auction, nil
